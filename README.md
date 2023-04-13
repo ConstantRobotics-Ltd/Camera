@@ -2,11 +2,11 @@
 
 
 
-![logo](_static/lens_logo.png)
+![logo](_static/camera_logo.png)
 
-# **Lens interface C++ library**
+# **Camera interface C++ library**
 
-**v2.0.0**
+**v1.0.0**
 
 ------
 
