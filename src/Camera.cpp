@@ -1,10 +1,10 @@
-#include "Lens.h"
-#include "LensVersion.h"
+#include "Camera.h"
+#include "CameraVersion.h"
 
 
 
-/// Get controller version.
-std::string cr::lens::Lens::getVersion()
+/// Get camera controller version.
+std::string cr::camera::Camera::getVersion()
 {
-    return LENS_VERSION;
+    return CAMERA_VERSION;
 }

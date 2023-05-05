@@ -14,106 +14,92 @@
 
 - [Overview](#Overview)
 - [Versions](#Versions)
-- [Lens interface class description](#Lens-interface-class-description)
+- [Camera interface class description](#Camera-interface-class-description)
   - [Class declaration](#Class-declaration)
   - [getVersion method](#getVersion-method)
-  - [init method](#init-method)
-  - [close method](#close-method)
-  - [isOpen method](#isOpen-method)
+  - [openCamera method](#openCamera-method)
+  - [closeCamera method](#closeCamera-method)
+  - [isCameraOpen-method](#isCameraOpen-method)
   - [setParam method](#setParam-method)
   - [getParam method](#getParam-method)
   - [executeCommand method](#executeCommand-method)
-  - [addVideoFrame method](#addVideoFrame-method)
 - [Data structures](#Data-structures)
-  - [LensCommand enum](#LensCommand-enum)
-  - [LensParam enum](#LensParam-enum)
+  - [CameraCommand enum](#CameraCommand-enum)
+  - [CameraParam enum](#CameraParam-enum)
 
 # Overview
 
-**Lens** C++ library provides standard interface as well defines data structures and rules for different lens controllers. **Lens** interface class doesn't do anything, just provides interface. Different lens controller classes inherit form **Lens** C++ class to provide standard control interface. **Lens.h** file contains list of data structures (**LensCommand** enum and **LensParam** enum) and **Lens** class declaration. **Lens** enum contains IDs of commands supported by **Lens** class. **LensParam** enum contains IDs of params supported by **Lens** class. All lens controller should include params and commands listed in **Lens.h** file.
+**Camera** C++ library provides standard interface as well defines data structures and rules for different camera controllers. **Camera** interface class doesn't do anything, just provides interface. Different camera controller classes inherit form **Camera** C++ class to provide standard control interface. **Camera.h** file contains list of data structures (**CameraCommand** enum and **CameraParam** enum) and **Camera** class declaration. **CameraCommand** enum contains IDs of commands supported by **Camera** class. **CameraParam** enum contains IDs of params supported by **Camera** class. All camera controller should include params and commands listed in **Camera.h** file.
 
 # Versions
 
 **Table 1** - Library versions.
 
-| Version | Release date | What's new                                                   |
-| ------- | ------------ | ------------------------------------------------------------ |
-| 1.0.0   | 21.10.2022   | First version                                                |
-| 2.0.0   | 17.03.2023   | - Subrepository LensControllerDataStrctures excluded.<br />- Data structures moved to Lens.h file.<br />- New parameters IDs added.<br />- Description updated. |
+| Version | Release date | What's new    |
+| ------- | ------------ | ------------- |
+| 1.0.0   | 05.05.2025   | First version |
 
-# Lens interface class description
+# Camera interface class description
 
 ## Class declaration
 
-**Lens** interface class declared in **Lens.h** file. Class declaration:
+**Camera** interface class declared in **Camera.h** file. Class declaration:
 
 ```cpp
 namespace cr
 {
-namespace lens
+namespace camera
 {
-/**
- * @brief Lens controller interface class.
- */
-class Lens
+class Camera
 {
 public:
 
     /**
-     * @brief Lens data structure.
+     * @brief Get Camera class version.
      * @return String of current class version.
      */
     static std::string getVersion();
 
     /**
-     * @brief Init lens controller.
-     * @param initString Init string. Format depends on lens controller.
-     * @return TRUE if the lens controller is init or FALSE.
+     * @brief Init camera controller.
+     * @param initString Init string. Format depends on camera controller.
+     * @return TRUE if the camera controller is init or FALSE.
      */
-    virtual bool init(std::string initString) = 0;
+    virtual bool openCamera(std::string initString) = 0;
 
     /**
-     * @brief Close connection.
+     * @brief Close camera connection.
      */
-    virtual void close() = 0;
+    virtual void closeCamera() = 0;
 
     /**
-     * @brief Get lens connection status.
-     * @return TRUE if the lens is open or FALSE.
+     * @brief Get camera connection status.
+     * @return TRUE if the camera is open or FALSE.
      */
-    virtual bool isOpen() = 0;
+    virtual bool isCameraOpen() = 0;
 
     /**
-     * @brief Set the lens controller param.
+     * @brief Set the camers controller param.
      * @param id Param ID.
      * @param value Param value.
      * @return TRUE if the property set or FALSE.
      */
-    virtual bool setParam(LensParam id, int value) = 0;
+    virtual bool setParam(CameraParam id, float value) = 0;
 
     /**
-     * @brief Get the lens controller param.
+     * @brief Get the camera controller param.
      * @param id Param ID.
      * @return int Param value or -1 of the param not exists.
      */
-    virtual int getParam(LensParam id) = 0;
+    virtual float getParam(CameraParam id) = 0;
 
     /**
-     * @brief Execute command.
+     * @brief Execute camera controller command.
      * @param id Command ID.
      * @param arg Command argument.
      * @return TRUE if the command executed or FALSE.
      */
-    virtual bool executeCommand(LensCommand id, int arg = 0) = 0;
-
-    /**
-     * @brief Add video frame to calculate focus factor.
-     * @param frame Pointer to frame data in Mono8 format.
-     * @param width Frame width.
-     * @param height Frame height.
-     * @return TRUE If the video frame was added or FALSE.
-     */
-    virtual bool addVideoFrame(uint8_t* frame, int width, int height) = 0;
+    virtual bool executeCommand(CameraCommand id, float arg = 0.0f) = 0;
 };
 }
 }
@@ -121,364 +107,393 @@ public:
 
 ## getVersion method
 
-**getVersion()** method return string of current version **Lens** class. Particular lens controller can have it's own **getVersion()** method. Method declaration:
+**getVersion()** method return string of current version **Camera** class. Particular camera controller can have it's own **getVersion()** method. Method declaration:
 
 ```cpp
 static std::string getVersion();
 ```
 
-Method can be used without **Lens** class instance:
+Method can be used without **Camera** class instance:
 
 ```cpp
-std::cout << "Lens controller version: " << Lens::getVersion() << std::endl;
+std::cout << "Camera class version: " << Camera::getVersion() << std::endl;
 ```
 
-## init method
+## openCamera method
 
-**init(...)** method designed to initialize lens controller. Method declaration:
+**openCamera(...)** method designed to initialize camera controller. Method declaration:
 
 ```cpp
-virtual bool init(std::string initString) = 0;
+virtual bool openCamera(std::string initString) = 0;
 ```
 
 | Parameter  | Value                                                        |
 | ---------- | ------------------------------------------------------------ |
-| initString | Initialization string. Particular lens controller can have unique format. It is recommended to use ';' symbol to divide part of initialization string. Example of lens controller initialization which user serial port: "/dev/ttyUSB0;9600;100" ("/dev/ttyUSB0" - serial port name, "9600" - baudrate, "100" - serial port read timeout). |
+| initString | Initialization string. Particular camera controller can have unique format. It is recommended to use ';' symbol to divide part of initialization string. Example of camera controller initialization which user serial port: "/dev/ttyUSB0;9600;100" ("/dev/ttyUSB0" - serial port name, "9600" - baudrate, "100" - serial port read timeout). |
 
-**Returns:** TRUE if the lens controller initialized or FALSE if not.
+**Returns:** TRUE if the camera controller initialized or FALSE if not.
 
-## close method
+## closeCamera method
 
-**close()** method designed to close connection to lens. Method declaration:
-
-```cpp
-virtual void close() = 0;
-```
-
-## isOpen method
-
-**isOpen()** method designed to obtain lens connection status. Method declaration:
+**closeCamera()** method designed to close connection to camera. Method declaration:
 
 ```cpp
-virtual bool isOpen() = 0;
+virtual void closeCamera() = 0;
 ```
 
-**Returns:** TRUE is the lens connected or FALSE if not.
+## isCameraOpen method
+
+**isCameraOpen()** method designed to obtain camera connection status. Method declaration:
+
+```cpp
+virtual bool isCameraOpen() = 0;
+```
+
+**Returns:** TRUE is the camera connected or FALSE if not.
 
 ## setParam method
 
-**setParam(...)** method designed to set new lens controller parameters value. Method declaration:
+**setParam(...)** method designed to set new camera controller parameters value. Method declaration:
 
 ```cpp
-virtual bool setParam(LensParam id, int value) = 0;
+virtual bool setParam(CameraParam id, float value) = 0;
 ```
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
-| id        | Lens controller parameter ID according to LensParam enum (see description of [LensParam](#LensParam-enum) enum). |
-| value     | Lens controller parameter value. Value depends on parameter ID (see description of [LensParam](#LensParam-enum) enum). |
+| id        | Camera controller parameter ID according to CameraParam enum (see description of [CameraParam](#CameraParam-enum) enum). |
+| value     | Camera controller parameter value. Value depends on parameter ID (see description of [CameraParam](#CameraParam-enum) enum). |
 
 **Returns:** TRUE is the parameter was set or FALSE if not.
 
 ## getParam method
 
-**getParam(...)** method designed to obtain lens controller parameter value. Method declaration:
+**getParam(...)** method designed to obtain camera controller parameter value. Method declaration:
 
 ```cpp
-virtual int getParam(LensParam id) = 0;
+virtual float getParam(CameraParam id) = 0;
 ```
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
-| id        | Lens controller parameter ID according to LensParam enum (see description of [LensParam](#LensParam-enum) enum). |
+| id        | Camera controller parameter ID according to CameraParam enum (see description of [CameraParam](#CameraParam-enum) enum). |
 
-**Returns:** parameter value or -1 of the parameters doesn't exist in particular lens controller.
+**Returns:** parameter value or -1 of the parameters doesn't exist in particular camera controller.
 
 ## executeCommand method
 
-**executeCommand(...)** method designed to execute lens controller command. Method declaration:
+**executeCommand(...)** method designed to execute camera controller command. Method declaration:
 
 ```cpp
-virtual bool executeCommand(LensCommand id, int arg = 0) = 0;
+virtual bool executeCommand(CameraCommand id, float arg = 0.0f) = 0;
 ```
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
-| id        | Lens controller command ID according to LensCommand enum (see description of [LensCommand](#LensCommand-enum) enum). |
-| arg       | Lens controller command argument. Value depends on command ID (see description of [LensCommand](#LensCommand-enum) enum). |
+| id        | Camera controller command ID according to CameraCommand enum (see description of [CameraCommand](#CameraCommand-enum) enum). |
+| arg       | Camera controller command argument. Value depends on command ID (see description of [CameraCommand](#CameraCommand-enum) enum). |
 
 **Returns:** TRUE is the command was executed or FALSE if not.
 
-## addVideoFrame method
-
-**addVideoFrame(...)** method designed to copy video frame data to lens controller to perform autofocus algorithm. Particular lens controller can support autofocus algorithms. To perform autofocus lens controller calculates focus factor in autofocus ROI (focus factor can be obtained with methos [getParam(...)](#getParam(...) method) and parameters ID **FOCUS_FACTOR**). To calculate focus factor lens controller needs video frame. If particular lens controller supports autofocus algorithms the method **addVideoFrame(...)** should be called for each captured video frame. Method declaration:
-
-```cpp
-virtual bool addVideoFrame(uint8_t* frame, int width, int height) = 0;
-```
-
-| Parameter | Description                                                  |
-| --------- | ------------------------------------------------------------ |
-| frame     | Pinter to video frame data. Video frame data must have Mono8 format (GRAYSCALE, 1 byte per pixel). |
-| width     | Video frame width in pixels.                                 |
-| height    | Video frame height in pixels.                                |
-
-**Returns:** TRUE is the video frame accepted or FALSE if not.
-
 # Data structures
 
-Lens.h file defines IDs for parameters (**LensParam** enum) and IDs for commands (**LensCommand** enum). **LensParam** enum and **LensCommand** enum declared in **Lens.h** file.
+**Camera.h** file defines IDs for parameters (**CameraParam** enum) and IDs for commands (**CameraCommand** enum). **CameraParam** enum and **CameraCommand** enum declared in **Camera.h** file.
 
-## LensCommand enum
-
-Enum declaration:
-
-```cpp
-enum class LensCommand
-{
-        /// Zoom tele. No arguments.
-        ZOOM_TELE = 1,
-        /// Zoom wide. No arguments.
-        ZOOM_WIDE,
-        /// Zoom to position. Argument:
-        /// zoom position 0(full wide) - 65535(full tele).
-        ZOOM_TO_POS,
-        /// Stop zoom. No arguments.
-        ZOOM_STOP,
-        /// Focus far. No arguments.
-        FOCUS_FAR,
-        /// Focus near. No arguments.
-        FOCUS_NEAR,
-        /// Focus to position. Argument:
-        /// focus position 0(full near) - 65535(full far).
-        FOCUS_TO_POS,
-        /// Focus stop. No arguments.
-        FOCUS_STOP,
-        /// Iris open. No arguments.
-        IRIS_OPEN,
-        /// Iris close. No arguments.
-        IRIS_CLOSE,
-        /// Iris to position. Argument:
-        /// iris position 0(full close) - 65535(full open).
-        IRIS_TO_POS,
-        /// Iris stop. No arguments.
-        IRIS_STOP,
-        /// Autofocus start. No arguments.
-        AF_START,
-        /// Autofocus stop. No arguments.
-        AF_STOP,
-        /// Restart lens controller. No arguments.
-        RESTART
-};
-```
-
-**Table 2** - Lens commands description. Some commands maybe unsupported by particular lens controller.
-
-| Command      | Description                                                  |
-| ------------ | ------------------------------------------------------------ |
-| ZOOM_TELE    | Move zoom tele (in). Command doesn't have arguments.         |
-| ZOOM_WIDE    | Move zoom wide (out). Command doesn't have arguments.        |
-| ZOOM_TO_POS  | Move zoom to position. Lens controller should have zoom range from 0 (full wide) to 65535 (full tele) regardless of the hardware value of the zoom position. If the minimum and maximum zoom position limits are set by the user in the lens parameters, the range of the hardware zoom position must be scaled to the user space 0-65535 range. Command argument: zoom position 0-65535. |
-| ZOOM_STOP    | Stop zoom moving including stop zoom to position command.    |
-| FOCUS_FAR    | Move focus far. Command doesn't have arguments.              |
-| FOCUS_NEAR   | Move focus near. Command doesn't have arguments.             |
-| FOCUS_TO_POS | Move focus to position. Lens controller should have focus range from 0 (full near) to 65535 (full far) regardless of the hardware value of the focus position. If the minimum and maximum focus position limits are set by the user in the lens parameters, the range of the hardware focus position must be scaled to the 0-65535 user space range. Command argument: focus position 0-65535. |
-| FOCUS_STOP   | Stop focus moving including stop focus to position command.  |
-| IRIS_OPEN    | Move iris open. Command doesn't have arguments.              |
-| IRIS_CLOSE   | Move iris close. Command doesn't have arguments.             |
-| IRIS_TO_POS  | Move iris to position. Lens controller should have iris range from 0 (full close) to 65535 (full far) regardless of the hardware value of the iris position. If the minimum and maximum iris position limits are set by the user in the lens parameters, the range of the hardware iris position must be scaled to the 0-65535 user space range. Command argument: iris position 0-65535. |
-| IRIS_STOP    | Stop iris moving including stop iris to position command. Command doesn't have arguments. |
-| AF_START     | Start autofocus.  Command doesn't have arguments.            |
-| AF_STOP      | Stop autofocus.  Command doesn't have arguments.             |
-| RESTART      | Restart lens controller.                                     |
-
-## LensParam enum
+## CameraCommand enum
 
 Enum declaration:
 
 ```cpp
-enum class LensParam
+enum class CameraCommand
 {
-        /// Zoom position (write/read). Value:
-        /// zoom position 0(full wide) - 65535(full tele).
-        ZOOM_POS = 1,
-        /// Hardware zoom position (write/read). Argument:
-        /// zoom position. Value depends on particular lens controller.
-        ZOOM_HW_POS,
-        /// Focus position (write/read). Value:
-        /// focus position 0(full near) - 65535(full far).
-        FOCUS_POS,
-        /// Hardware focus position (write/read). Value:
-        /// focus position. Value depends on particular lens controller.
-        FOCUS_HW_POS,
-        /// Iris position (write/read). Value:
-        /// iris position 0(full close) - 65535(full open).
-        IRIS_POS,
-        /// Hardware iris position (write/read). Value:
-        /// iris position. Value depends on particular lens controller.
-        IRIS_HW_POS,
-        /// Focus mode (write/read). Value:
-        /// Value depends on particular lens controller.
-        FOCUS_MODE,
-        /// Filter mode (write/read).  Value:
-        /// Value depends on particular lens controller.
-        FILTER_MODE,
-        /// Auto focus ROI top-left coordinate (write/read). Value:
-        /// ROI top-left horizontal coordinate in pixels.
-        AF_ROI_X0,
-        /// Auto focus ROI top-left coordinate (write/read). Value:
-        /// ROI top-left vertical coordinate in pixels.
-        AF_ROI_Y0,
-        /// Auto focus ROI bottom-right coordinate (write/read). Value:
-        /// ROI bottom-right horizontal coordinate in pixels.
-        AF_ROI_X1,
-        /// Auto focus ROI bottom-right coordinate (write/read). Value:
-        /// ROI bottom-right vertical coordinate in pixels.
-        AF_ROI_Y1,
-        /// Zoom speed (write/read). Value:
-        /// zoom speed 0 to 100 %.
-        ZOOM_SPEED,
-        /// Hardware zoom speed (write/read). Value:
-        /// zoom speed. Value depends on particular lens controller.
-        ZOOM_HW_SPEED,
-        /// Max hardware zoom speed (write/read). Value:
-        /// zoom speed. Value depends on particular lens controller.
-        ZOOM_HW_MAX_SPEED,
-        /// Focus speed (write/read). Value:
-        /// focus speed 0 to 100 %.
-        FOCUS_SPEED,
-        /// Hardware focus speed (write/read). Value:
-        /// focus speed. Value depends on particular lens controller.
-        FOCUS_HW_SPEED,
-        /// Max hardware focus speed (write/read). Argument:
-        /// focus speed. Value depends on particular lens controller.
-        FOCUS_HW_MAX_SPEED,
-        /// Iris speed (write/read). Value:
-        /// iris speed 0 to 100 %.
-        IRIS_SPEED,
-        /// Hardware iris speed (write/read). Value:
-        /// iris speed. Value depends on particular lens controller.
-        IRIS_HW_SPEED,
-        /// Max hardware iris speed (write/read). Value:
-        /// iris speed. Value depends on particular lens controller.
-        IRIS_HW_MAX_SPEED,
-        /// Hardware zoom tele limit (write/read). Value:
-        /// hardware zoom position. Value depends on particular lens controller.
-        ZOOM_HW_TELE_LIMIT,
-        /// Hardware zoom wide limit (write/read). Value:
-        /// hardware zoom position. Value depends on particular lens controller.
-        ZOOM_HW_WIDE_LIMIT,
-        /// Hardware focus far limit (write/read). Value:
-        /// hardware focus position. Value depends on particular lens controller.
-        FOCUS_HW_FAR_LIMIT,
-        /// Hardware focus near limit (write/read). Value:
-        /// hardware focus position. Value depends on particular lens controller.
-        FOCUS_HW_NEAR_LIMIT,
-        /// Hardware iris open limit (write/read). Value:
-        /// hardware iris position. Value depends on particular lens controller.
-        IRIS_HW_OPEN_LIMIT,
-        /// Hardware iris close limit (write/read). Value:
-        /// hardware iris position. Value depends on particular lens controller.
-        IRIS_HW_CLOSE_LIMIT,
-        /// Focus factor value (read only). Value:
-        /// Value depends on particular lens controller.
-        FOCUS_FACTOR,
-        /// Connection status (read only). Value:
-        /// 0 - not connected, 1 - connected.
-        IS_CONNECTED,
-        /// Hardware focus speed in AF mode (write/read). Value:
-        /// hardware focus speed. Value depends on particular lens controller.
-        FOCUS_HW_AF_SPEED,
-        /// Threshold for focus factor to start refocus (write/read). Value:
-        /// threshold %: 0 - no check, 100 - changing x2.
-        FOCUS_FACTOR_THRESHOLD,
-        /// Refocus timeout, sec (write/read). Value:
-        /// 0 - no refocus, to 100000 sec.
-        REFOCUS_TIMEOUT_SEC,
-        /// AF process mode (read only). Value: 0 - not active, 1 - active.
-        AF_IS_ACTIVE,
-        /// Iris mode. (write/read). Value:
-        /// Value depends on particular lens controller.
-        IRIS_MODE,
-        /// Debug info in terminal mode (write/read). Value: 0 - off, 1 - on.
-        DEBUG_INFO_MODE,
-        /// Auto ROI width (write/read). Value: 0 to video frame size, pxl.
-        AUTO_AF_ROI_WIDTH,
-        /// Auto ROI height (write/read). Value: 0 to video frame size, pxl.
-        AUTO_AF_ROI_HEIGHT,
-        /// Auto ROI frame border in pixels (write/read). Value:
-        /// border size from 0 to video frame min(width/height) / 2.
-        AUTO_AF_ROI_BORDER,
-        /// AF ROI mode (write/read). Value:
-        /// 0 - Manual position, 1 - Auto position.
-        AF_ROI_MODE,
-        /// Optical extender mode (write/read). Value:
-        /// Value depends on particular lens controller. Default: 0 -Off, 1 -On.
-        EXTENDER_MODE,
-        /// Stabilizer mode (write/read). Value:
-        /// 0 - Off, 1 - On.
-        STABILIZER_MODE,
-        /// AF range (write/read). Value:
-        /// Value depends on particular lens controller.
-        AF_RANGE,
-        /// Zoom full wide field of view (write/read). Value: FOV degree.
-        ZOOM_FULL_WIDE_FOV_DEG,
-        /// Zoom full tele field of view (write/read). Value: FOV degree.
-        ZOOM_FULL_TELE_FOV_DEG,
-        /// Fiels of view, degree (write/read). Value: FOV degree.
-        FOV_DEG
+    /// Restart camera controller.
+    RESTART = 1,
+    /// Do NUC.
+    NUC,
+    /// Apply settings.
+    APPLY_PARAMS,
+    /// Save params.
+    SAVE_PARAMS,
+    /// Menu on.
+    MENU_ON,
+    /// Menu off.
+    MENU_OFF,
+    /// Menu set.
+    MENU_SET,
+    /// Menu up.
+    MENU_UP,
+    /// Menu down.
+    MENU_DOWN,
+    /// Menu left.
+    MENU_LEFT,
+    /// Menu right.
+    MENU_RIGHT,
+    /// Freeze, Argument: time msec.
+    FREEZE,
+    /// Disable freeze.
+    DEFREEZE
 };
 ```
 
-**Table 3** - Lens params description. Some params maybe unsupported by particular lens controller.
+**Table 2** - Camera commands description. Some commands maybe unsupported by particular camera controller.
 
-| Parameter              | Access       | Description                                                  |
-| ---------------------- | ------------ | ------------------------------------------------------------ |
-| ZOOM_POS               | read / write | Zoom position. Setting a parameter is equivalent to the command ZOOM_TO_POS. Lens controller should have zoom range from 0 (full wide) to 65535 (full tele) regardless of the hardware value of the zoom position. If the minimum and maximum zoom position limits are set by the user in the lens parameters, the range of the hardware zoom position must be scaled to the user space 0-65535 range. Parameter value: zoom position 0-65535. |
-| ZOOM_HW_POS            | read / write | Hardware zoom position. Parameter value depends on particular lens controller. |
-| FOCUS_POS              | read / write | Focus position. Setting a parameter is equivalent to the command FOCUS_TO_POS. Lens controller should have focus range from 0 (full near) to 65535 (full far) regardless of the hardware value of the focus position. If the minimum and maximum focus position limits are set by the user in the lens parameters, the range of the hardware focus position must be scaled to the user space 0-65535 range. Parameter value: focus position 0-65535. |
-| FOCUS_HW_POS           | read / write | Hardware focus position. Parameter value depends on particular lens controller. |
-| IRIS_POS               | read / write | Iris position. Setting a parameter is equivalent to the command IRIS_TO_POS. Lens controller should have iris range from 0 (full close) to 65535 (full open) regardless of the hardware value of the iris position. If the minimum and maximum iris position limits are set by the user in the lens parameters, the range of the hardware iris position must be scaled to the user space 0-65535 range. Parameter value: iris position 0-65535. |
-| IRIS_HW_POS            | read / write | Hardware iris position. Parameter value depends on particular lens controller. |
-| FOCUS_MODE             | read / write | Focus mode. Parameter value depends on particular lens controller. Default values: 0 - Manual focus control, 1 - Auto focus control. |
-| FILTER_MODE            | read / write | Filter mode. Parameter value depends on particular lens controller. Default values: 0 - Filter on, 1 - Filter off. |
-| AF_ROI_X0              | read / write | Autofocus ROI top-left corner horizontal position in pixels. Autofocus ROI is rectangle. |
-| AF_ROI_Y0              | read / write | Autofocus ROI top-left corner vertical position in pixels. Autofocus ROI is rectangle. |
-| AF_ROI_X1              | read / write | Autofocus ROI bottom-right corner horizontal position in pixels. Autofocus ROI is rectangle. |
-| AF_ROI_Y1              | read / write | Autofocus ROI bottom-right corner vertical position in pixels. Autofocus ROI is rectangle. |
-| ZOOM_SPEED             | read / write | Zoom speed. Lens controller should have zoom speed range from 0 to 100% of max hardware zoom speed (parameter ZOOM_HW_MAX_SPEED). If the user sets a new parameter value of the ZOOM_HW_SPEED parameter the parameter ZOOM_SPEED must be updated automatically by lens controller. Formula for calculating speed: ZOOM_SPEED = ( ZOOM_HW_SPEED / ZOOM_HW_MAX_SPEED) * 100. |
-| ZOOM_HW_SPEED          | read / write | Zoom hardware speed. Value depends on particular lens controller. The value of the parameters must be <= ZOOM_HW_MAX_SPEED parameter. If the user sets a new parameter value of the ZOOM_SPEED parameter the parameter ZOOM_HW_SPEED must be updated automatically by lens controller. Formula for calculating hardware speed: ZOOM_HW_SPEED = ( ZOOM_SPEED / 100 ) * ZOOM_HW_MAX_SPEED. |
-| ZOOM_HW_MAX_SPEED      | read / write | Maximum zoom hardware speed. Value depends on particular lens controller. If user sets new ZOOM_HW_MAX_SPEED value the parameters ZOOM_SPEED and ZOOM_HW_SPEED must be updated by lens controller automatically. If new value of ZOOM_HW_MAX_SPEED parameter will be less than ZOOM_HW_SPEED the parameter ZOOM_HW_SPEED must be reduced automatically. |
-| FOCUS_SPEED            | read / write | Focus speed. Lens controller should have focus speed range from 0 to 100% of max hardware focus speed (parameter FOCUS_HW_MAX_SPEED). If the user sets a new parameter value of the FOCUS_HW_SPEED parameter the parameter FOCUS_SPEED must be updated automatically by lens controller. Formula for calculating speed: FOCUS_SPEED = ( FOCUS_HW_SPEED / FOCUS_HW_MAX_SPEED) * 100. |
-| FOCUS_HW_SPEED         | read / write | Focus hardware speed. Value depends on particular lens controller. The value of the parameters must be <= FOCUS_HW_MAX_SPEED parameter. If the user sets a new parameter value of the FOCUS_SPEED parameter the parameter FOCUS_HW_SPEED must be updated automatically by lens controller. Formula for calculating hardware speed: FOCUS_HW_SPEED = ( FOCUS_SPEED / 100 ) * FOCUS_HW_MAX_SPEED. |
-| FOCUS_HW_MAX_SPEED     | read / write | Maximum focus hardware speed. Value depends on particular lens controller. If user sets new FOCUS_HW_MAX_SPEED value the parameters FOCUS_SPEED and FOCUS_HW_SPEED must be updated by lens controller automatically. If new value of FOCUS_HW_MAX_SPEED parameter will be less than FOCUS_HW_SPEED the parameter FOCUS_HW_SPEED must be reduced automatically. |
-| IRIS_SPEED             | read / write | Iris speed. Lens controller should have iris speed range from 0 to 100% of max hardware iris speed (parameter IRIS_HW_MAX_SPEED). If the user sets a new parameter value of the IRIS_HW_SPEED parameter the parameter IRIS_SPEED must be updated automatically by lens controller. Formula for calculating speed: IRIS_SPEED = ( IRIS_HW_SPEED / IRIS_HW_MAX_SPEED) * 100. |
-| IRIS_HW_SPEED          | read / write | Iris hardware speed. Value depends on particular lens controller. The value of the parameters must be <= IRIS_HW_MAX_SPEED parameter. If the user sets a new parameter value of the IRIS_SPEED parameter the parameter IRIS_HW_SPEED must be updated automatically by lens controller. Formula for calculating hardware speed: IRIS_HW_SPEED = ( IRIS_SPEED / 100 ) * IRIS_HW_MAX_SPEED. |
-| IRIS_HW_MAX_SPEED      | read / write | Maximum iris hardware speed. Value depends on particular lens controller. If user sets new IRIS_HW_MAX_SPEED value the parameters IRIS_SPEED and IRIS_HW_SPEED must be updated by lens controller automatically. If new value of IRIS_HW_MAX_SPEED parameter will be less than IRIS_HW_SPEED the parameter IRIS_HW_SPEED must be reduced automatically. |
-| ZOOM_HW_TELE_LIMIT     | read / write | Zoom hardware tele limit. Value depends on particular lens controller. Lens controller should control zoom position. Lens controller should stop zoom moving if hardware zoom position will be our of limits. |
-| ZOOM_HW_WIDE_LIMIT     | read / write | Zoom hardware wide limit. Value depends on particular lens controller. Lens controller should control zoom position. Lens controller should stop zoom moving if hardware zoom position will be our of limits. |
-| FOCUS_HW_FAR_LIMIT     | read / write | Focus hardware far limit. Value depends on particular lens controller. Lens controller should control focus position. Lens controller should stop focus moving if hardware focus position will be our of limits. |
-| FOCUS_HW_NEAR_LIMIT    | read / write | Focus hardware near limit. Value depends on particular lens controller. Lens controller should control focus position. Lens controller should stop focus moving if hardware focus position will be our of limits. |
-| IRIS_HW_OPEN_LIMIT     | read / write | Iris hardware open limit. Value depends on particular lens controller. Lens controller should control iris position. Lens controller should stop iris moving if hardware iris position will be our of limits. |
-| IRIS_HW_CLOSE_LIMIT    | read / write | Iris hardware close limit. Value depends on particular lens controller. Lens controller should control iris position. Lens controller should stop iris moving if hardware iris position will be our of limits. |
-| FOCUS_FACTOR           | read only    | Focus factor if it was calculated. If not the values must be -1. Value depends on particular lens controller. |
-| IS_CONNECTED           | read only    | Lens connection status. Value: 0 - not connected. 1 - connected. |
-| FOCUS_HW_AF_SPEED      | read / write | Focus hardware speed in autofocus mode. Value depends on particular lens controller. |
-| FOCUS_FACTOR_THRESHOLD | read / write | Threshold for changes of focus factor to start refocus. Value: threshold %: 0 - no check, 100 - changing x2. |
-| REFOCUS_TIMEOUT_SEC    | read / write | Timeout for automatic refocus in seconds. Value: 0 - no automatic refocus, 100000 - maximum value. |
-| AF_IS_ACTIVE           | read only    | Flag about active autofocus algorithm. Value: 0 - autofocus not working, 1 - working. |
-| IRIS_MODE              | read / write | Iris mode. Value depends on particular lens controller. Default values: 0 - manual iris control, 1 - auto iris control. |
-| DEBUG_INFO_MODE        | read / write | Flag to allow printing debug information in terminal. Value: 0 - no debug info printing, 1 - printing debug info. |
-| AUTO_AF_ROI_WIDTH      | read / write | ROI width (pixels) for autofocus algorithm when lens controller detects ROI position automatically. Value: from 8 to (video frame width - AUTO_AF_ROI_BORDER * 2). |
-| AUTO_AF_ROI_HEIGHT     | read / write | ROI height (pixels) for autofocus algorithm when lens controller detects ROI position automatically. Value: from 8 to (video frame width - AUTO_AF_ROI_BORDER * 2). |
-| AUTO_AF_ROI_BORDER     | read / write | Video frame border size (along vertical and horizontal axes). Value: border size from 0 to video frame min(video frame width/height) / 2. |
-| AF_ROI_MODE            | read / write | AF ROI mode (write/read). Value: 0 - Manual position, 1 - Auto position. |
-| EXTENDER_MODE          | read / write | Lens extender mode. Value depends on particular lens controller. Default values: 0 - no extender, 1 - x2 extender. |
-| STABILIZER_MODE        | read / write | Lens stabilization mode. Value depends on particular lens controller. Default values: 0 - no stabilization, 1 - stabilization. |
-| AF_RANGE               | read / write | Autofocus range. Value depends on particular lens controller. |
-| ZOOM_FULL_WIDE_FOV_GED | read / write | Lens field of view (degree) when zoom full wide. Depends on combination lens + camera (sensor size) the field of view value can be different from technical characteristics of lens. The lens should calculate FOV_DEG automatically when zoom changes according to values of ZOOM_FULL_WIDE_FOV_GED and ZOOM_FULL_TELE_FOV_DEG by linear approximation. |
-| ZOOM_FULL_TELE_FOV_DEG | read / write | Lens field of view (degree) when zoom full tele. Depends on combination lens + camera (sensor size) the field of view value can be different from technical characteristics of lens. The lens should calculate FOV_DEG automatically when zoom changes according to values of ZOOM_FULL_WIDE_FOV_GED and ZOOM_FULL_TELE_FOV_DEG by linear approximation. |
-| FOV_DEG                |              | Current field of view (degree) calculated according to values of ZOOM_FULL_WIDE_FOV_GED and ZOOM_FULL_TELE_FOV_DEG and ZOOM_HW_POS  by linear approximation. Particular lens controller can consider also FOCUS_HW_POS for more precise calculation. |
+| Command      | Description                   |
+| ------------ | ----------------------------- |
+| RESTART      | Restart camera controller.    |
+| NUC          | Do NUC. For thermal cameras.  |
+| APPLY_PARAMS | Apply settings.               |
+| SAVE_PARAMS  | Save params in camera memory. |
+| MENU_ON      | Menu on.                      |
+| MENU_OFF     | Menu off.                     |
+| MENU_SET     | Menu set.                     |
+| MENU_UP      | Menu move up.                 |
+| MENU_DOWN    | Menu move down.               |
+| MENU_LEFT    | Menu move left.               |
+| MENU_RIGHT   | Menu move right.              |
+| FREEZE       | Freeze image.                 |
+| DEFREEZE     | Defreeze image.               |
+
+## CameraParam enum
+
+Enum declaration:
+
+```cpp
+enum class CameraParam
+{
+    /// Video frame width. Value from 0 to 16384.
+    WIDTH = 1,
+    /// Video frame height Value from 0 to 16384.
+    HEIGHT,
+    /// Display menu mode. Values: 0 - Off. 1 - On.
+    DISPLAY_MODE,
+    /// Video output type. Value depends on particular camera controller.
+    VIDEO_OUTPUT,
+    /// Logging mode.
+    /// Default values:
+    /// 0 - Disable.
+    /// 1 - Only file.
+    /// 2 - Only terminal.
+    /// 3 - File and terminal.
+    LOG_MODE,
+    /// Exposure mode. Value depends on particular camera controller.
+    /// Default values:
+    /// 0 - Manual,
+    /// 1 - Auto (default),
+    /// 2 - Shutter priority.
+    /// 3 - Aperture priority.
+    EXPOSURE_MODE,
+    /// Exposure time of the camera sensor. The exposure time is limited by the
+    /// frame interval. Camera controller should interpret the values as 100 µs
+    /// units, where the value 1 stands for 1/10000th of a second, 10000 for 1
+    /// second and 100000 for 10 seconds.
+    EXPOSURE_TIME,
+    /// White balance mode.
+    /// Default values:
+    /// 0 - Manual,
+    /// 1 - Auto
+    WHITE_BALANCE_MODE,
+    /// White balance area.
+    WHITE_BALANCE_AREA,
+    /// White dynamic range mode.
+    /// Default values:
+    /// 0 - Off,
+    /// 1 - On.
+    WHITE_DINAMIC_RANGE_MODE,
+    /// Image stabilization mode.
+    /// Default value:
+    /// 0 - Off.
+    /// 1 - On.
+    STABILIZATION_MODE,
+    /// ISO sensetivity. Value depends on particular camera controller.
+    ISO_SENSITIVITY,
+    /// Scene mode. Value depends on particular camera controller.
+    SCENE_MODE,
+    /// FPS.
+    FPS,
+    /// Brightness mode.
+    /// Default values:
+    /// 0 - Manual.
+    /// 1 - Auto.
+    BRIGHTNESS_MODE,
+    /// Brightness. Value 0-100%.
+    BRIGHTNESS,
+    /// Contrast. Value 1-100%.
+    CONTRAST,
+    /// AGC mode.
+    /// Default values:
+    /// 0 - Manual.
+    /// 1 - Auto.
+    GAIN_MODE,
+    /// Gain. Value 1-100%.
+    GAIN,
+    /// Sharpening mode.
+    /// Default values:
+    /// 0 - Manual.
+    /// 1 - Auto.
+    SHARPENING_MODE,
+    /// Sharpening. Value 1-100%.
+    SHARPENING,
+    /// Palette. Value depends on particular camera controller.
+    /// Default values for thermal cameras:
+    /// 0 - White hot.
+    /// 1 - Black hot.
+    PALETTE,
+    /// Analog gain control mode.
+    /// Default values:
+    /// 0 - Manual.
+    /// 1 - Auto.
+    AGC_MODE,
+    /// Shutter mode.
+    /// Default values:
+    /// 0 - Manual,
+    /// 1 - Auto.
+    SHUTTER_MODE,
+    /// Shutter position. 0 (full close) - 65535 (full open).
+    SHUTTER_POSITION,
+    /// Shutter speed. Value: 0% - 100%.
+    SHUTTER_SPEED,
+    /// Digital zoom mode.
+    /// Default values:
+    /// 0 - Off.
+    /// 1 - On.
+    DIGITAL_ZOOM_MODE,
+    /// Digital zoom. Value x1.0 to x20.0.
+    DIGITAL_ZOOM,
+    /// Exposure compensation mode.
+    /// Default values:
+    /// 0 - Off.
+    /// 1 - On.
+    EXPOSURE_COMPENSATION_MODE,
+    /// Exposure compensation position. Value depends on
+    /// particular camera controller.
+    EXPOSURE_COMPENSATION_POSITION,
+    /// Defog mode.
+    /// Default values:
+    /// 0 - Off.
+    /// 1 - On.
+    DEFOG_MODE,
+    /// Dehaze mode.
+    /// Default values:
+    /// 0 - Off,
+    /// 1 - On.
+    DEHAZE_MODE,
+    /// Noise reduction mode.
+    /// Default values:
+    /// 0 - Off,
+    /// 1 - 2D.
+    /// 3 - 3D.
+    NOISE_REDUCTION_MODE,
+    /// Black and white filter mode.
+    /// Default values:
+    /// 0 - Off.
+    /// 1 - On.
+    BLACK_WHITE_FILTER_MODE,
+    /// Filter mode. Value depends on particular camera controller.
+    FILTER_MODE,
+    /// NUC mode.
+    /// Default values:
+    /// 0 - Manual.
+    /// 1 - Auto.
+    NUC_MODE,
+    /// Auto NUC interval. Value in milliseconds from 0 (Off) to 100000.
+    AUTO_NUC_INTERVAL,
+    /// Image flip.
+    /// Default values:
+    /// 0 - Off,
+    /// 1 - Horizontal,
+    /// 2 - Vertical,
+    /// 3 - Horizontal and vertical.
+    IMAGE_FLIP,
+    /// DDE mode.
+    /// Default values:
+    /// 0 - Off.
+    /// 1 - On.
+    DDE_MODE,
+    /// DDE level. Value depends on particular camera controller.
+    DDE_LEVEL,
+    /// ROI top-left horizontal position, pixels.
+    ROI_X0,
+    /// ROI top-left vertical position, pixels.
+    ROI_Y0,
+    /// ROI bottom-right horizontal position, pixels.
+    ROI_X1,
+    /// ROI bottom-right vertical position, pixels.
+    ROI_Y1,
+    /// Camera temperature, degree.
+    TEMPERATURE,
+    /// ALC gate. Value depends on particular camera controller.
+    ALC_GATE,
+    /// Sensor sensitivity. Value depends on particular camera controller.
+    SENSETIVITY,
+    /// Changing mode (day / night). Value depends on particular camera controller.
+    CHANGING_MODE,
+    /// Changing level (day / night). Value depends on particular camera controller.
+    CHANGING_LEVEL,
+    /// Chroma level. Values: 0% - 100%.
+    CHROMA_LEVEL,
+    /// Details, enhancement. Values: 0% - 100%.
+    DETAIL,
+    /// Camera settings profile. Value depends on particular camera controller.
+    PROFILE
+};
+```
+
+**Table 3** - Camera params description. Some params maybe unsupported by particular camera controller.
+
+| Parameter                      | Access       | Description                                                  |
+| ------------------------------ | ------------ | ------------------------------------------------------------ |
+| WIDTH                          | read / write | Video frame width. Value from 0 to 16384.                    |
+| HEIGHT                         | read / write | Video frame height Value from 0 to 16384.                    |
+| DISPLAY_MODE                   | read / write | Display menu mode. Values: 0 - Off. 1 - On.                  |
+| VIDEO_OUTPUT                   | read / write | Video output type. Value depends on particular camera controller. |
+| LOG_MODE                       | read / write | /Logging mode. Default values:<br />0 - Disable.<br />1 - Only file.<br />2 - Only terminal.<br />3 - File and terminal. |
+| EXPOSURE_MODE                  | read / write | Exposure mode. Value depends on particular camera controller. Default values:<br />0 - Manual,<br />1 - Auto (default),<br />2 - Shutter priority.<br />3 - Aperture priority. |
+| EXPOSURE_TIME                  | read / write | Exposure time of the camera sensor. The exposure time is limited by the frame interval. Camera controller should interpret the values as 100 µs units, where the value 1 stands for 1/10000th of a second, 10000 for 1 second and 100000 for 10 seconds. |
+| WHITE_BALANCE_MODE             | read / write | White balance mode. Default values:<br />0 - Manual,<br />1 - Auto. |
+| WHITE_BALANCE_AREA             | read / write | White balance area.                                          |
+| WHITE_DINAMIC_RANGE_MODE       | read / write | White dynamic range mode. Default values:<br />0 - Off.<br />1 - On. |
+| STABILIZATION_MODE             | read / write | Image stabilization mode. Default value:<br />0 - Off.<br />1 - On. |
+| ISO_SENSITIVITY                | read / write | ISO sensitivity. Value depends on particular camera controller. |
+| SCENE_MODE                     | read / write | Scene mode. Value depends on particular camera controller.   |
+| FPS                            | read / write | FPS.                                                         |
+| BRIGHTNESS_MODE                | read / write | Brightness mode. Default values:<br />0 - Manual.<br />1 - Auto. |
+| BRIGHTNESS                     | read / write | Brightness. Value 0-100%.                                    |
+| CONTRAST                       | read / write | Contrast. Value 1-100%.                                      |
+| GAIN_MODE                      | read / write | Gain mode. Default values:<br />0 - Manual.<br />1 - Auto.   |
+| GAIN                           | read / write | Gain. Value 1-100%.                                          |
+| SHARPENING_MODE                | read / write | Sharpening mode. Default values:<br />0 - Manual.<br />1 - Auto. |
+| SHARPENING                     | read / write | Sharpening. Value 1-100%.                                    |
+| PALETTE                        | read / write | Palette. Value depends on particular camera controller.    Default values for thermal cameras:<br />0 - White hot.<br />1 - Black hot. |
+| AGC_MODE                       | read / write | Analog gain control mode. Default values:<br />0 - Manual.<br />1 - Auto. |
+| SHUTTER_MODE                   | read / write | Shutter mode. Default values:<br />0 - Manual.<br />1 - Auto. |
+| SHUTTER_POSITION               | read / write | Shutter position. 0 (full close) - 65535 (full open).        |
+| SHUTTER_SPEED                  | read / write | Shutter speed. Value: 0% - 100%.                             |
+| DIGITAL_ZOOM_MODE              | read / write | Digital zoom mode. Default values:<br />0 - Off.<br />1 - On. |
+| DIGITAL_ZOOM                   | read only    | Digital zoom. Value x1.0 to x20.0.                           |
+| EXPOSURE_COMPENSATION_MODE     | read only    | Exposure compensation mode. Default values:<br />0 - Off.<br />1 - On. |
+| EXPOSURE_COMPENSATION_POSITION | read / write | Exposure compensation position. Value depends on particular camera controller. |
+| DEFOG_MODE                     | read / write | Defog mode. Default values:<br />0 - Off.<br />1 - On.       |
+| DEHAZE_MODE                    |              | Dehaze mode. Default values:<br />0 - Off.<br />1 - On.      |
+| NOISE_REDUCTION_MODE           | read / write | Noise reduction mode. Default values:<br />0 - Off.<br />1 - 2D.<br />3 - 3D. |
+| BLACK_WHITE_FILTER_MODE        | read only    | Black and white filter mode. Default values:<br />0 - Off.<br />1 - On. |
+| FILTER_MODE                    | read / write | Filter mode. Value depends on particular camera controller.  |
+| NUC_MODE                       | read / write | NUC mode for thermal cameras. Default values:<br />0 - Manual.<br />1 - Auto. |
+| AUTO_NUC_INTERVAL              | read / write | Auto NUC interval for thermal cameras. Value in milliseconds from 0 (Off) to 100000. |
+| IMAGE_FLIP                     | read / write | Image flip mode. Default values:<br />0 - Off.<br />1 - Horizontal.<br />2 - Vertical.<br />3 - Horizontal and vertical. |
+| DDE_MODE                       | read / write | DDE mode. Default values:<br />0 - Off.<br />1 - On.         |
+| DDE_LEVEL                      | read / write | DDE level. Value depends on particular camera controller.    |
+| ROI_X0                         | read / write | ROI top-left horizontal position, pixels.                    |
+| ROI_Y0                         | read / write | ROI top-left vertical position, pixels.                      |
+| ROI_X1                         | read / write | ROI bottom-right horizontal position, pixels.                |
+| ROI_Y1                         | read / write | ROI bottom-right vertical position, pixels.                  |
+| TEMPERATURE                    | read only    | Camera temperature, degree.                                  |
+| ALC_GATE                       | read / write | ALC gate. Value depends on particular camera controller.     |
+| SENSETIVITY                    | read / write | Sensor sensitivity. Value depends on particular camera controller. |
+| CHANGING_MODE                  | read / write | Changing mode (day / night). Value depends on particular camera controller. |
+| CHANGING_LEVEL                 | read / write | Changing level (day / night). Value depends on particular camera controller. |
+| CHROMA_LEVEL                   | read / write | Chroma level. Values: 0% - 100%.                             |
+| DETAIL                         | read / write | Details, enhancement. Values: 0% - 100%.                     |
+| PROFILE                        | read / write | Camera settings profile. Value depends on particular camera controller. |
 
 
 
