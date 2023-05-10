@@ -6,7 +6,7 @@
 
 # **Camera interface C++ library**
 
-**v1.1.0**
+**v1.2.0**
 
 ------
 
@@ -35,10 +35,11 @@
 
 **Table 1** - Library versions.
 
-| Version | Release date | What's new           |
-| ------- | ------------ | -------------------- |
-| 1.0.0   | 05.05.2023   | First version        |
-| 1.1.0   | 08.05.2023   | Added new parameter. |
+| Version | Release date | What's new               |
+| ------- | ------------ | ------------------------ |
+| 1.0.0   | 05.05.2023   | First version            |
+| 1.1.0   | 08.05.2023   | Added new parameter.     |
+| 1.2.0   | 10.05.2023   | Parameters list changed. |
 
 # Camera interface class description
 
@@ -436,8 +437,9 @@ enum class CameraParam
     DETAIL,
     /// Camera settings profile. Value depends on particular camera controller.
     PROFILE,
-    /// Connection status. Value: 0 - no camera responses, 1 - connected.
-    CONNECTION_STATUS
+    /// Connection status (read only). Value:
+    /// 0 - not connected, 1 - connected.
+    IS_CONNECTED
 };
 ```
 
@@ -497,4 +499,4 @@ enum class CameraParam
 | CHROMA_LEVEL                   | read / write | Chroma level. Values: 0% - 100%.                             |
 | DETAIL                         | read / write | Details, enhancement. Values: 0% - 100%.                     |
 | PROFILE                        | read / write | Camera settings profile. Value depends on particular camera controller. |
-| CONNECTION_STATUS              | read only    | Connection status. Value: 0 - no camera responses, 1 - connected. |
+| IS_CONNECTED                   | read only    | Connection status. Value: 0 - no camera responses, 1 - connected. |
