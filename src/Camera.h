@@ -220,8 +220,9 @@ enum class CameraParam
     DETAIL,
     /// Camera settings profile. Value depends on particular camera controller.
     PROFILE,
-    /// Connection status. Value: 0 - no camera responses, 1 - connected.
-    CONNECTION_STATUS
+    /// Connection status (read only). Value:
+    /// 0 - not connected, 1 - connected.
+    IS_CONNECTED
 };
 
 
