@@ -22,7 +22,7 @@
   - [openCamera method](#openCamera-method)
   - [initCamera method](#initCamera-method)
   - [closeCamera method](#closeCamera-method)
-  - [isCameraOpen method](#isCameraOpen method)
+  - [isCameraOpen method](#isCameraOpen-method)
   - [isCameraConnected method](#isCameraConnected-method)
   - [setParam method](#setParam-method)
   - [getParam method](#getParam-method)
