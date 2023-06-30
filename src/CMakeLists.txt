@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.13)
 ## INTERFACE-PROJECT
 ## name and version
 ###############################################################################
-project(Camera VERSION 1.0.0 LANGUAGES CXX)
+project(Camera VERSION 1.1.0 LANGUAGES CXX)
 
 
 
@@ -50,4 +50,5 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 ## LINK LIBRARIES
 ## linking all dependencies
 ###############################################################################
+target_link_libraries(${PROJECT_NAME} ConfigReader)
 

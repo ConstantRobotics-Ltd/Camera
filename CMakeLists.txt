@@ -30,6 +30,7 @@ endif()
 ## project configuration
 ################################################################################
 SET(${PARENT}_CAMERA                         ON  CACHE BOOL "" ${REWRITE_FORCE})
+SET(${PARENT}_CAMERA_TEST                    ON  CACHE BOOL "" ${REWRITE_FORCE})
 
 
 
@@ -38,5 +39,11 @@ SET(${PARENT}_CAMERA                         ON  CACHE BOOL "" ${REWRITE_FORCE})
 ## Adding subdirectories according to the project configuration
 ################################################################################
 if (${PARENT}_CAMERA)
+    add_subdirectory(3rdparty)
     add_subdirectory(src)
 endif()
+
+if (${PARENT}_CAMERA_TEST)
+    add_subdirectory(test)
+endif()
+
