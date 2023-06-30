@@ -28,7 +28,7 @@ int main(void)
 {
     cout << "#####################################" << endl;
     cout << "#                                   #" << endl;
-    cout << "# Camera data structures test      #" << endl;
+    cout << "# Camera data structures test       #" << endl;
     cout << "#                                   #" << endl;
     cout << "#####################################" << endl;
     cout << endl;

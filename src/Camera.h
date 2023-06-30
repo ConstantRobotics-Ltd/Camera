@@ -20,153 +20,110 @@ public:
     int width{0};
     /// Video frame height Value from 0 to 16384.
     int height{0};
-    /// Display menu mode. Values: 0 - Off. 1 - On.
+    /// Display menu mode. Value depends on implementation but it is recommended
+    /// to keep default values: 0 - Off. 1 - On.
     int displayMode{0};
-    /// Video output type. Value depends on particular camera controller.
+    /// Video output type. Value depends on implementation.
     int videoOutput{0};
-    /// Logging mode.
-    /// Default values:
-    /// 0 - Disable.
-    /// 1 - Only file.
-    /// 2 - Only terminal.
-    /// 3 - File and terminal.
+    /// Logging mode. Values: 0 - Disable, 1 - Only file,
+    /// 2 - Only terminal (console), 3 - File and terminal.
     int logMode{0};
-    /// Exposure mode. Value depends on particular camera controller.
-    /// Default values:
-    /// 0 - Manual,
-    /// 1 - Auto (default),
-    /// 2 - Shutter priority.
-    /// 3 - Aperture priority.
+    /// Exposure mode. Value depends on implementation but it is recommended to
+    /// keep default values: 0 - Manual, 1 - Auto (default),
+    /// 2 - Shutter priority, 3 - Aperture priority.
     int exposureMode{1};
     /// Exposure time of the camera sensor. The exposure time is limited by the
     /// frame interval. Camera controller should interpret the values as 100 µs
-    /// units, where the value 1 stands for 1/10000th of a second, 10000 for 1
-    /// second and 100000 for 10 seconds.
+    /// units, where the value 1 stands for 1/10000th of a second, 10000 for
+    /// 1 second and 100000 for 10 seconds.
     int exposureTime{0};
-    /// White balance mode.
-    /// Default values:
-    /// 0 - Manual,
-    /// 1 - Auto
+    /// White balance mode. Value depends on implementation but it is
+    /// recommended to keep default values: 0 - Manual, 1 - Auto.
     int whiteBalanceMode{1};
-    /// White balance area.
+    /// White balance area. Value depends on implementation.
     int whiteBalanceArea{0};
-    /// White dynamic range mode.
-    /// Default values:
-    /// 0 - Off,
-    /// 1 - On.
+    /// White dynamic range mode. Value depends on implementation but it is
+    /// recommended to keep default values: 0 - Off, 1 - On.
     int wideDynamicRangeMode{0};
-    /// Image stabilization mode.
-    /// Default value:
-    /// 0 - Off.
-    /// 1 - On.
+    /// Image stabilization mode. Value depends on implementation but it is
+    /// recommended to keep default values: 0 - Off, 1 - On.
     int stabilisationMode{0};
-    /// ISO sensetivity. Value depends on particular camera controller.
+    /// ISO sensitivity. Value depends on implementation.
     int isoSensetivity{0};
-    /// Scene mode. Value depends on particular camera controller.
+    /// Scene mode. Value depends on implementation.
     int sceneMode{0};
     /// FPS.
     float fps{0.0f};
-    /// Brightness mode.
-    /// Default values:
-    /// 0 - Manual.
-    /// 1 - Auto.
+    /// Brightness mode. Value depends on implementation but it is recommended
+    /// to keep default values: 0 - Manual, 1 - Auto.
     int brightnessMode{1};
-    /// Brightness. Value 0-100%.
+    /// Brightness. Value 0 - 100%.
     int brightness{0};
-    /// Contrast. Value 1-100%.
+    /// Contrast. Value 1 - 100%.
     int contrast{0};
-    /// AGC mode.
-    /// Default values:
-    /// 0 - Manual.
-    /// 1 - Auto.
+    /// Gain mode. Value depends on implementation but it is recommended to keep
+    /// default values: 0 - Manual, 1 - Auto.
     int gainMode{1};
-    /// Gain. Value 1-100%.
+    /// Gain. Value 1 - 100%.
     int gain{0};
-    /// Sharpening mode.
-    /// Default values:
-    /// 0 - Manual.
-    /// 1 - Auto.
+    /// Sharpening mode. Value depends on implementation but it is recommended
+    /// to keep default values: 0 - Manual, 1 - Auto.
     int sharpeningMode{0};
-    /// Sharpening. Value 1-100%.
+    /// Sharpening. Value 1 - 100%.
     int sharpening{0};
-    /// Palette. Value depends on particular camera controller.
-    /// Default values for thermal cameras:
-    /// 0 - White hot.
-    /// 1 - Black hot.
+    /// Palette. Value depends on implementation but it is recommended to keep
+    /// default values for thermal cameras: 0 - White hot, 1 - Black hot.
     int palette{0};
-    /// Analog gain control mode.
-    /// Default values:
-    /// 0 - Manual.
-    /// 1 - Auto.
+    /// Analog gain control mode. Value depends on implementation but it is
+    /// recommended to keep default values: 0 - Manual, 1 - Auto.
     int agcMode{1};
-    /// Shutter mode.
-    /// Default values:
-    /// 0 - Manual,
-    /// 1 - Auto.
+    /// Shutter mode. Value depends on implementation but it is recommended to
+    /// keep default values: 0 - Manual, 1 - Auto.
     int shutterMode{1};
     /// Shutter position. 0 (full close) - 65535 (full open).
     int shutterPos{0};
-    /// Shutter speed. Value: 0% - 100%.
+    /// Shutter speed. Value: 0 - 100%.
     int shutterSpeed{0};
-    /// Digital zoom mode.
-    /// Default values:
-    /// 0 - Off.
-    /// 1 - On.
+    /// Digital zoom mode. Value depends on implementation but it is recommended
+    /// to keep default values: 0 - Off, 1 - On.
     int digitalZoomMode{0};
-    /// Digital zoom. Value x1.0 to x20.0.
+    /// Digital zoom. Value 1.0 (x1) - 20.0 (x20).
     float digitalZoom{1.0f};
-    /// Exposure compensation mode.
-    /// Default values:
-    /// 0 - Off.
-    /// 1 - On.
+    /// Exposure compensation mode. Value depends on implementation but it is
+    /// recommended to keep default values: 0 - Off, 1 - On.
     int exposureCompensationMode{0};
-    /// Exposure compensation position. Value depends on
-    /// particular camera controller.
+    /// Exposure compensation position. Value depends on particular camera
+    /// controller.
     int exposureCompensationPosition{0};
-    /// Defog mode.
-    /// Default values:
-    /// 0 - Off.
-    /// 1 - On.
+    /// Defog mode. Value depends on implementation but it is recommended to
+    /// keep default values: 0 - Off, 1 - On.
     int defogMode{0};
-    /// Dehaze mode.
-    /// Default values:
-    /// 0 - Off,
-    /// 1 - On.
+    /// Dehaze mode. Value depends on implementation but it is recommended to
+    /// keep default values: 0 - Off, 1 - On.
     int dehazeMode{0};
-    /// Noise reduction mode.
-    /// Default values:
-    /// 0 - Off,
-    /// 1 - 2D.
-    /// 3 - 3D.
+    /// Noise reduction mode. Value depends on implementation but it is
+    /// recommended to keep default values: 0 - Off, 1 - 2D, 3 - 3D.
     int noiseReductionMode{0};
-    /// Black and white filter mode.
-    /// Default values:
-    /// 0 - Off.
-    /// 1 - On.
+    /// Black and white filter mode. Value depends on implementation but it is
+    /// recommended to keep default values: 0 - Off, 1 - On.
     int blackAndWhiteFilterMode{0};
-    /// Filter mode. Value depends on particular camera controller.
+    /// Filter mode. Value depends on implementation.
     int filterMode{0};
-    /// NUC mode.
-    /// Default values:
-    /// 0 - Manual.
-    /// 1 - Auto.
+    /// NUC mode for thermal cameras. Value depends on implementation but it is
+    /// recommended to keep default values: 0 - Manual, 1 - Auto.
     int nucMode{0};
-    /// Auto NUC interval. Value in milliseconds from 0 (Off) to 100000.
+    /// Auto NUC interval for thermal cameras. Value in milliseconds
+    /// from 0 (Off) to 100000.
     int autoNucIntervalMsec{0};
-    /// Image flip.
-    /// Default values:
-    /// 0 - Off,
-    /// 1 - Horizontal,
-    /// 2 - Vertical,
+    /// Image flip mode. Value depends on implementation but it is recommended
+    /// to keep default values: 0 - Off, 1 - Horizontal, 2 - Vertical,
     /// 3 - Horizontal and vertical.
     int imageFlip{0};
-    /// DDE mode.
-    /// Default values:
-    /// 0 - Off.
-    /// 1 - On.
+    /// DDE mode. Value depends on implementation but it is recommended to keep
+    /// default values: 0 - Off, 1 - On.
     int ddeMode{0};
-    /// DDE level. Value depends on particular camera controller.
-    int ddeLevel{0};
+    /// DDE level. Value depends on implementation.
+    float ddeLevel{0};
     /// ROI top-left horizontal position, pixels.
     int roiX0{0};
     /// ROI top-left vertical position, pixels.
@@ -177,32 +134,33 @@ public:
     int roiY1{0};
     /// Camera temperature, degree.
     float temperature{0.0f};
-    /// ALC gate. Value depends on particular camera controller.
+    /// ALC gate. Value depends on implementation.
     int alcGate{0};
-    /// Sensor sensitivity. Value depends on particular camera controller.
+    /// Sensor sensitivity. Value depends on implementation.
     float sensitivity{0};
-    /// Changing mode (day / night). Value depends on particular camera controller.
+    /// Changing mode (day / night). Value depends on implementation.
     int changingMode{0};
-    /// Changing level (day / night). Value depends on particular camera controller.
+    /// Changing level (day / night). Value depends on implementation.
     float changingLevel{0.0f};
-    /// Chroma level. Values: 0% - 100%.
+    /// Chroma level. Values: 0 - 100%.
     int chromeLevel{0};
-    /// Details, enhancement. Values: 0% - 100%.
+    /// Details, enhancement. Values: 0 - 100%.
     int detail{0};
-    /// Camera settings profile. Value depends on particular camera controller.
+    /// Camera settings profile. Value depends on implementation.
     int profile{0};
-    /// Connection status (read only). Shows if we have respons from camera. Value:
-    /// 0 - not connected, 1 - connected.
+    /// Connection status (read only). Shows if we have respons from camera.
+    /// Value: false - not connected, true - connected.
     bool isConnected{false};
-    /// Open status (read only): 1 - camera control port open, 0 - not open.
+    /// Open status (read only):
+    /// true - camera control port open, false - not open.
     bool isOpen{false};
     /// Camera type. Value depends on implementation.
     int type{0};
-    /// Camera custom param 1. Value depends on implementation.
+    /// Camera custom param. Value depends on implementation.
     float custom1{0.0f};
-    /// Camera custom param 2. Value depends on implementation.
+    /// Camera custom param. Value depends on implementation.
     float custom2{0.0f};
-    /// Camera custom param 3. Value depends on implementation.
+    /// Camera custom param. Value depends on implementation.
     float custom3{0.0f};
 
 
@@ -328,152 +286,109 @@ enum class CameraParam
     WIDTH = 1,
     /// Video frame height Value from 0 to 16384.
     HEIGHT,
-    /// Display menu mode. Values: 0 - Off. 1 - On.
+    /// Display menu mode. Value depends on implementation but it is recommended
+    /// to keep default values: 0 - Off. 1 - On.
     DISPLAY_MODE,
-    /// Video output type. Value depends on particular camera controller.
+    /// Video output type. Value depends on implementation.
     VIDEO_OUTPUT,
-    /// Logging mode.
-    /// Default values:
-    /// 0 - Disable.
-    /// 1 - Only file.
-    /// 2 - Only terminal.
-    /// 3 - File and terminal.
+    /// Logging mode. Values: 0 - Disable, 1 - Only file,
+    /// 2 - Only terminal (console), 3 - File and terminal.
     LOG_MODE,
-    /// Exposure mode. Value depends on particular camera controller.
-    /// Default values:
-    /// 0 - Manual,
-    /// 1 - Auto (default),
-    /// 2 - Shutter priority.
-    /// 3 - Aperture priority.
+    /// Exposure mode. Value depends on implementation but it is recommended to
+    /// keep default values: 0 - Manual, 1 - Auto (default),
+    /// 2 - Shutter priority, 3 - Aperture priority.
     EXPOSURE_MODE,
     /// Exposure time of the camera sensor. The exposure time is limited by the
     /// frame interval. Camera controller should interpret the values as 100 µs
-    /// units, where the value 1 stands for 1/10000th of a second, 10000 for 1
-    /// second and 100000 for 10 seconds.
+    /// units, where the value 1 stands for 1/10000th of a second, 10000 for
+    /// 1 second and 100000 for 10 seconds.
     EXPOSURE_TIME,
-    /// White balance mode.
-    /// Default values:
-    /// 0 - Manual,
-    /// 1 - Auto
+    /// White balance mode. Value depends on implementation but it is
+    /// recommended to keep default values: 0 - Manual, 1 - Auto.
     WHITE_BALANCE_MODE,
-    /// White balance area.
+    /// White balance area. Value depends on implementation.
     WHITE_BALANCE_AREA,
-    /// Wide dynamic range mode.
-    /// Default values:
-    /// 0 - Off,
-    /// 1 - On.
+    /// White dynamic range mode. Value depends on implementation but it is
+    /// recommended to keep default values: 0 - Off, 1 - On.
     WIDE_DINAMIC_RANGE_MODE,
-    /// Image stabilization mode.
-    /// Default value:
-    /// 0 - Off.
-    /// 1 - On.
+    /// Image stabilization mode. Value depends on implementation but it is
+    /// recommended to keep default values: 0 - Off, 1 - On.
     STABILIZATION_MODE,
-    /// ISO sensetivity. Value depends on particular camera controller.
+    /// ISO sensitivity. Value depends on implementation.
     ISO_SENSITIVITY,
-    /// Scene mode. Value depends on particular camera controller.
+    /// Scene mode. Value depends on implementation.
     SCENE_MODE,
     /// FPS.
     FPS,
-    /// Brightness mode.
-    /// Default values:
-    /// 0 - Manual.
-    /// 1 - Auto.
+    /// Brightness mode. Value depends on implementation but it is recommended
+    /// to keep default values: 0 - Manual, 1 - Auto.
     BRIGHTNESS_MODE,
-    /// Brightness. Value 0-100%.
+    /// Brightness. Value 0 - 100%.
     BRIGHTNESS,
-    /// Contrast. Value 1-100%.
+    /// Contrast. Value 1 - 100%.
     CONTRAST,
-    /// AGC mode.
-    /// Default values:
-    /// 0 - Manual.
-    /// 1 - Auto.
+    /// Gain mode. Value depends on implementation but it is recommended to keep
+    /// default values: 0 - Manual, 1 - Auto.
     GAIN_MODE,
-    /// Gain. Value 1-100%.
+    /// Gain. Value 1 - 100%.
     GAIN,
-    /// Sharpening mode.
-    /// Default values:
-    /// 0 - Manual.
-    /// 1 - Auto.
+    /// Sharpening mode. Value depends on implementation but it is recommended
+    /// to keep default values: 0 - Manual, 1 - Auto.
     SHARPENING_MODE,
-    /// Sharpening. Value 1-100%.
+    /// Sharpening. Value 1 - 100%.
     SHARPENING,
-    /// Palette. Value depends on particular camera controller.
-    /// Default values for thermal cameras:
-    /// 0 - White hot.
-    /// 1 - Black hot.
+    /// Palette. Value depends on implementation but it is recommended to keep
+    /// default values for thermal cameras: 0 - White hot, 1 - Black hot.
     PALETTE,
-    /// Analog gain control mode.
-    /// Default values:
-    /// 0 - Manual.
-    /// 1 - Auto.
+    /// Analog gain control mode. Value depends on implementation but it is
+    /// recommended to keep default values: 0 - Manual, 1 - Auto.
     AGC_MODE,
-    /// Shutter mode.
-    /// Default values:
-    /// 0 - Manual,
-    /// 1 - Auto.
+    /// Shutter mode. Value depends on implementation but it is recommended to
+    /// keep default values: 0 - Manual, 1 - Auto.
     SHUTTER_MODE,
     /// Shutter position. 0 (full close) - 65535 (full open).
     SHUTTER_POSITION,
-    /// Shutter speed. Value: 0% - 100%.
+    /// Shutter speed. Value: 0 - 100%.
     SHUTTER_SPEED,
-    /// Digital zoom mode.
-    /// Default values:
-    /// 0 - Off.
-    /// 1 - On.
+    /// Digital zoom mode. Value depends on implementation but it is recommended
+    /// to keep default values: 0 - Off, 1 - On.
     DIGITAL_ZOOM_MODE,
-    /// Digital zoom. Value x1.0 to x20.0.
+    /// Digital zoom. Value 1.0 (x1) - 20.0 (x20).
     DIGITAL_ZOOM,
-    /// Exposure compensation mode.
-    /// Default values:
-    /// 0 - Off.
-    /// 1 - On.
+    /// Exposure compensation mode. Value depends on implementation but it is
+    /// recommended to keep default values: 0 - Off, 1 - On.
     EXPOSURE_COMPENSATION_MODE,
-    /// Exposure compensation position. Value depends on
-    /// particular camera controller.
+    /// Exposure compensation position. Value depends on particular camera
+    /// controller.
     EXPOSURE_COMPENSATION_POSITION,
-    /// Defog mode.
-    /// Default values:
-    /// 0 - Off.
-    /// 1 - On.
+    /// Defog mode. Value depends on implementation but it is recommended to
+    /// keep default values: 0 - Off, 1 - On.
     DEFOG_MODE,
-    /// Dehaze mode.
-    /// Default values:
-    /// 0 - Off,
-    /// 1 - On.
+    /// Dehaze mode. Value depends on implementation but it is recommended to
+    /// keep default values: 0 - Off, 1 - On.
     DEHAZE_MODE,
-    /// Noise reduction mode.
-    /// Default values:
-    /// 0 - Off,
-    /// 1 - 2D.
-    /// 3 - 3D.
+    /// Noise reduction mode. Value depends on implementation but it is
+    /// recommended to keep default values: 0 - Off, 1 - 2D, 3 - 3D.
     NOISE_REDUCTION_MODE,
-    /// Black and white filter mode.
-    /// Default values:
-    /// 0 - Off.
-    /// 1 - On.
+    /// Black and white filter mode. Value depends on implementation but it is
+    /// recommended to keep default values: 0 - Off, 1 - On.
     BLACK_WHITE_FILTER_MODE,
-    /// Filter mode. Value depends on particular camera controller.
+    /// Filter mode. Value depends on implementation.
     FILTER_MODE,
-    /// NUC mode.
-    /// Default values:
-    /// 0 - Manual.
-    /// 1 - Auto.
+    /// NUC mode for thermal cameras. Value depends on implementation but it is
+    /// recommended to keep default values: 0 - Manual, 1 - Auto.
     NUC_MODE,
-    /// Auto NUC interval. Value in milliseconds from 0 (Off) to 100000.
+    /// Auto NUC interval for thermal cameras. Value in milliseconds
+    /// from 0 (Off) to 100000.
     AUTO_NUC_INTERVAL_MSEC,
-    /// Image flip.
-    /// Default values:
-    /// 0 - Off,
-    /// 1 - Horizontal,
-    /// 2 - Vertical,
+    /// Image flip mode. Value depends on implementation but it is recommended
+    /// to keep default values: 0 - Off, 1 - Horizontal, 2 - Vertical,
     /// 3 - Horizontal and vertical.
     IMAGE_FLIP,
-    /// DDE mode.
-    /// Default values:
-    /// 0 - Off.
-    /// 1 - On.
+    /// DDE mode. Value depends on implementation but it is recommended to keep
+    /// default values: 0 - Off, 1 - On.
     DDE_MODE,
-    /// DDE level. Value depends on particular camera controller.
+    /// DDE level. Value depends on implementation.
     DDE_LEVEL,
     /// ROI top-left horizontal position, pixels.
     ROI_X0,
@@ -485,32 +400,33 @@ enum class CameraParam
     ROI_Y1,
     /// Camera temperature, degree.
     TEMPERATURE,
-    /// ALC gate. Value depends on particular camera controller.
+    /// ALC gate. Value depends on implementation.
     ALC_GATE,
-    /// Sensor sensitivity. Value depends on particular camera controller.
+    /// Sensor sensitivity. Value depends on implementation.
     SENSETIVITY,
-    /// Changing mode (day / night). Value depends on particular camera controller.
+    /// Changing mode (day / night). Value depends on implementation.
     CHANGING_MODE,
-    /// Changing level (day / night). Value depends on particular camera controller.
+    /// Changing level (day / night). Value depends on implementation.
     CHANGING_LEVEL,
-    /// Chroma level. Values: 0% - 100%.
+    /// Chroma level. Values: 0 - 100%.
     CHROMA_LEVEL,
-    /// Details, enhancement. Values: 0% - 100%.
+    /// Details, enhancement. Values: 0 - 100%.
     DETAIL,
-    /// Camera settings profile. Value depends on particular camera controller.
+    /// Camera settings profile. Value depends on implementation.
     PROFILE,
-    /// Connection status (read only). Shows if we have respons from camera. Value:
-    /// 0 - not connected, 1 - connected.
+    /// Connection status (read only). Shows if we have respons from camera.
+    /// Value: 0 - not connected, 2 - connected.
     IS_CONNECTED,
-    /// Open status (read only): 1 - camera control port open, 0 - not open.
+    /// Open status (read only):
+    /// 1 - camera control port open, 0 - not open.
     IS_OPEN,
-    /// Lens type. Value depends on implementation.
+    /// Camera type. Value depends on implementation.
     TYPE,
-    /// Camera custom param 1. Value depends on implementation.
+    /// Camera custom param. Value depends on implementation.
     CUSTOM_1,
-    /// Camera custom param 2. Value depends on implementation.
+    /// Camera custom param. Value depends on implementation.
     CUSTOM_2,
-    /// Camera custom param 3. Value depends on implementation.
+    /// Camera custom param. Value depends on implementation.
     CUSTOM_3
 };
 
@@ -579,7 +495,7 @@ public:
     /**
      * @brief Get the camera controller params.
      * @param id Param ID.
-     * @return Lens params structure.
+     * @return Camera params structure.
      */
     virtual CameraParams getParams() = 0;
 
