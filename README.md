@@ -6,7 +6,7 @@
 
 # **Camera interface C++ library**
 
-**v2.0.0**
+**v2.1.0**
 
 ------
 
@@ -60,6 +60,7 @@
 | 1.1.0   | 08.05.2023   | - Added new parameter.                                       |
 | 1.2.0   | 10.05.2023   | - Parameters list changed.                                   |
 | 2.0.0   | 30.06.2023   | - Added new parameters.<br />- Added new methods to encode/decode commands.<br />- Added new class CameraParams to store camera parameters.<br />- Added license.<br />- Repository made public. |
+| 2.1.0   | 12.07.2023   | - Added CameraParamsMask structure.<br />- Names of params updated.<br />- Updated encode(...) and decode(...) methods of CameraParams.<br />- Documentation updated. |
 
 
 
@@ -183,7 +184,7 @@ cout << "Camera class version: " << Camera::getVersion() << endl;
 Console output:
 
 ```bash
-Camera class version: 2.0.0
+Camera class version: 2.1.0
 ```
 
 
@@ -714,7 +715,6 @@ enum class CameraParam
 **CameraParams** interface class declared in **Camera.h** file. Class declaration:
 
 ```cpp
-/// Camera params structure.
 class CameraParams
 {
 public:
@@ -847,7 +847,7 @@ public:
     /// Changing level (day / night). Value depends on implementation.
     float changingLevel{0.0f};
     /// Chroma level. Values: 0 - 100%.
-    int chromeLevel{0};
+    int chromaLevel{0};
     /// Details, enhancement. Values: 0 - 100%.
     int detail{0};
     /// Camera settings profile. Value depends on implementation.
@@ -870,18 +870,17 @@ public:
     JSON_READABLE(CameraParams, initString, width, height, displayMode,
                   videoOutput, logMode, exposureMode, exposureTime,
                   whiteBalanceMode, whiteBalanceArea, wideDynamicRangeMode,
-                  stabilisationMode, isoSensetivity, sceneMode,
-                  fps, brightnessMode, brightness, contrast, gainMode,
+                  stabilisationMode, isoSensetivity, sceneMode, fps,
+                  brightnessMode, brightness, contrast, gainMode,
                   gain, sharpeningMode, sharpening, palette, agcMode,
                   shutterMode, shutterPos, shutterSpeed, digitalZoomMode,
-                  digitalZoom, exposureCompensationMode,
-                  exposureCompensationPosition, defogMode, dehazeMode,
-                  noiseReductionMode, blackAndWhiteFilterMode, filterMode,
-                  nucMode, autoNucIntervalMsec, imageFlip, ddeMode,
-                  ddeLevel, roiX0, roiY0, roiX1, roiY1, alcGate,
-                  sensitivity, changingMode, changingLevel, chromeLevel,
-                  detail, profile, type, custom1, custom2,custom3)
-        
+                  digitalZoom, exposureCompensationMode, exposureCompensationPosition,
+                  defogMode, dehazeMode, noiseReductionMode, blackAndWhiteFilterMode,
+                  filterMode, nucMode, autoNucIntervalMsec, imageFlip,
+                  ddeMode, ddeLevel, roiX0, roiY0, roiX1, roiY1, alcGate,
+                  sensitivity, changingMode, changingLevel, chromaLevel,
+                  detail, profile, type, custom1, custom2, custom3)
+
     /**
      * @brief operator =
      * @param src Source object.
@@ -892,8 +891,9 @@ public:
      * @brief Encode params. The method doesn't encode initString.
      * @param data Pointer to data buffer.
      * @param size Size of data.
+     * @param mask Pointer to parameters mask structure.
      */
-    void encode(uint8_t* data, int& size);
+    void encode(uint8_t* data, int& size, CameraParamsMask* mask = nullptr);
     /**
      * @brief Decode params. The method doesn't decode initString.
      * @param data Pointer to data.
@@ -957,7 +957,7 @@ public:
 | sensitivity                  | int    | Sensor sensitivity. Value depends on implementation.         |
 | changingMode                 | int    | Changing mode (day / night). Value depends on implementation. |
 | changingLevel                | int    | Changing level (day / night). Value depends on implementation. |
-| chromeLevel                  | float  | Chroma level. Values: 0 - 100%.                              |
+| chromaLevel                  | float  | Chroma level. Values: 0 - 100%.                              |
 | detail                       | int    | Details, enhancement. Values: 0 - 100%.                      |
 | profile                      | int    | Camera settings profile. Value depends on implementation.    |
 | isConnected                  | bool   | Connection status. Value: false - no camera responses, true - connected. |
@@ -973,25 +973,111 @@ public:
 
 ## Serialize camera params
 
-**CameraParams** class provides method **encode(...)** to serialize camera params (fields of CameraParams class, see Table 4). Serialization of camera params necessary in case when you need to send camera params via communication channels. Method doesn't encode **initString**. Method declaration:
+**CameraParams** class provides method **encode(...)** to serialize camera params (fields of CameraParams class, see Table 4). Serialization of camera params necessary in case when you need to send camera params via communication channels. Method doesn't encode **initString**. Method provides options to exclude particular parameters from serialization. To do this method inserts binary mask (8 bytes) where each bit represents particular parameter and **decode(...)** method recognizes it. Method declaration:
 
 ```cpp
-void encode(uint8_t* data, int& size);
+void encode(uint8_t* data, int& size, CameraParamsMask* mask = nullptr);
 ```
 
-| Parameter | Value                   |
-| --------- | ----------------------- |
-| data      | Pointer to data buffer. |
-| size      | Size of encoded data.   |
+| Parameter | Value                                                        |
+| --------- | ------------------------------------------------------------ |
+| data      | Pointer to data buffer.                                      |
+| size      | Size of encoded data.                                        |
+| mask      | Parameters mask - pointer to **CameraParamsMask** structure. **CameraParamsMask** (declared in Camera.h file) determines flags for each field (parameter) declared in **CameraParams** class. If the user wants to exclude any parameters from serialization, he can put a pointer to the mask. If the user wants to exclude a particular parameter from serialization, he should set the corresponding flag in the CameraParamsMask structure. |
 
-Example:
+**CameraParamsMask** structure declaration:
+
+```cpp
+typedef struct CameraParamsMask
+{
+    bool width{true};
+    bool height{true};
+    bool displayMode{true};
+    bool videoOutput{true};
+    bool logMode{true};
+    bool exposureMode{true};
+    bool exposureTime{true};
+    bool whiteBalanceMode{true};
+    bool whiteBalanceArea{true};
+    bool wideDynamicRangeMode{true};
+    bool stabilisationMode{true};
+    bool isoSensetivity{true};
+    bool sceneMode{true};
+    bool fps{true};
+    bool brightnessMode{true};
+    bool brightness{true};
+    bool contrast{true};
+    bool gainMode{true};
+    bool gain{true};
+    bool sharpeningMode{true};
+    bool sharpening{true};
+    bool palette{true};
+    bool agcMode{true};
+    bool shutterMode{true};
+    bool shutterPos{true};
+    bool shutterSpeed{true};
+    bool digitalZoomMode{true};
+    bool digitalZoom{true};
+    bool exposureCompensationMode{true};
+    bool exposureCompensationPosition{true};
+    bool defogMode{true};
+    bool dehazeMode{true};
+    bool noiseReductionMode{true};
+    bool blackAndWhiteFilterMode{true};
+    bool filterMode{true};
+    bool nucMode{true};
+    bool autoNucIntervalMsec{true};
+    bool imageFlip{true};
+    bool ddeMode{true};
+    bool ddeLevel{true};
+    bool roiX0{true};
+    bool roiY0{true};
+    bool roiX1{true};
+    bool roiY1{true};
+    bool temperature{true};
+    bool alcGate{true};
+    bool sensitivity{true};
+    bool changingMode{true};
+    bool changingLevel{true};
+    bool chromaLevel{true};
+    bool detail{true};
+    bool profile{true};
+    bool isConnected{true};
+    bool isOpen{true};
+    bool type{true};
+    bool custom1{true};
+    bool custom2{true};
+    bool custom3{true};
+} CameraParamsMask;
+```
+
+Example without parameters mask:
 
 ```cpp
 // Encode data.
 CameraParams in;
+in.profile = 10;
 uint8_t data[1024];
 int size = 0;
 in.encode(data, size);
+cout << "Encoded data size: " << size << " bytes" << endl;
+```
+
+Example with parameters mask:
+
+```cpp
+// Prepare params.
+CameraParams in;
+in.profile = 3;
+
+// Prepare mask.
+CameraParamsMask mask;
+mask.profile = false; // Exclude profile. Others by default.
+
+// Encode.
+uint8_t data[1024];
+int size = 0;
+in.encode(data, size, &mask);
 cout << "Encoded data size: " << size << " bytes" << endl;
 ```
 
@@ -999,7 +1085,7 @@ cout << "Encoded data size: " << size << " bytes" << endl;
 
 ## Deserialize camera params
 
-**CameraParams** class provides method **decode(...)** to deserialize camera params (fields of CameraParams class, see Table 4). Deserialization of camera params necessary in case when you need to receive params via communication channels. Method doesn't decode **initString** filend. Method declaration:
+**CameraParams** class provides method **decode(...)** to deserialize camera params (fields of CameraParams class, see Table 4). Deserialization of camera params necessary in case when you need to receive params via communication channels. Method automatically recognizes which parameters were serialized by **encode(...)** method. Method doesn't decode **initString** filend. Method declaration:
 
 ```cpp
 bool decode(uint8_t* data);

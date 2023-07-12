@@ -9,8 +9,76 @@ namespace cr
 {
 namespace camera
 {
+/**
+ * @brief Camera params mask.
+ */
+typedef struct CameraParamsMask
+{
+    bool width{true};
+    bool height{true};
+    bool displayMode{true};
+    bool videoOutput{true};
+    bool logMode{true};
+    bool exposureMode{true};
+    bool exposureTime{true};
+    bool whiteBalanceMode{true};
+    bool whiteBalanceArea{true};
+    bool wideDynamicRangeMode{true};
+    bool stabilisationMode{true};
+    bool isoSensetivity{true};
+    bool sceneMode{true};
+    bool fps{true};
+    bool brightnessMode{true};
+    bool brightness{true};
+    bool contrast{true};
+    bool gainMode{true};
+    bool gain{true};
+    bool sharpeningMode{true};
+    bool sharpening{true};
+    bool palette{true};
+    bool agcMode{true};
+    bool shutterMode{true};
+    bool shutterPos{true};
+    bool shutterSpeed{true};
+    bool digitalZoomMode{true};
+    bool digitalZoom{true};
+    bool exposureCompensationMode{true};
+    bool exposureCompensationPosition{true};
+    bool defogMode{true};
+    bool dehazeMode{true};
+    bool noiseReductionMode{true};
+    bool blackAndWhiteFilterMode{true};
+    bool filterMode{true};
+    bool nucMode{true};
+    bool autoNucIntervalMsec{true};
+    bool imageFlip{true};
+    bool ddeMode{true};
+    bool ddeLevel{true};
+    bool roiX0{true};
+    bool roiY0{true};
+    bool roiX1{true};
+    bool roiY1{true};
+    bool temperature{true};
+    bool alcGate{true};
+    bool sensitivity{true};
+    bool changingMode{true};
+    bool changingLevel{true};
+    bool chromaLevel{true};
+    bool detail{true};
+    bool profile{true};
+    bool isConnected{true};
+    bool isOpen{true};
+    bool type{true};
+    bool custom1{true};
+    bool custom2{true};
+    bool custom3{true};
+} CameraParamsMask;
 
-/// Camera params structure.
+
+
+/**
+ * @brief Camera params class.
+ */
 class CameraParams
 {
 public:
@@ -143,7 +211,7 @@ public:
     /// Changing level (day / night). Value depends on implementation.
     float changingLevel{0.0f};
     /// Chroma level. Values: 0 - 100%.
-    int chromeLevel{0};
+    int chromaLevel{0};
     /// Details, enhancement. Values: 0 - 100%.
     int detail{0};
     /// Camera settings profile. Value depends on implementation.
@@ -214,7 +282,7 @@ public:
                   sensitivity,
                   changingMode,
                   changingLevel,
-                  chromeLevel,
+                  chromaLevel,
                   detail,
                   profile,
                   type,
@@ -233,8 +301,9 @@ public:
      * @brief Encode params. The method doesn't encode initString.
      * @param data Pointer to data buffer.
      * @param size Size of data.
+     * @param mask Pointer to parameters mask structure.
      */
-    void encode(uint8_t* data, int& size);
+    void encode(uint8_t* data, int& size, CameraParamsMask* mask = nullptr);
 
     /**
      * @brief Decode params. The method doesn't decode initString.

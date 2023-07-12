@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.13)
 ## INTERFACE-PROJECT
 ## name and version
 ###############################################################################
-project(Camera VERSION 1.1.0 LANGUAGES CXX)
+project(Camera VERSION 2.1.0 LANGUAGES CXX)
 
 
 
