@@ -231,7 +231,6 @@ public:
     /// Camera custom param. Value depends on implementation.
     float custom3{0.0f};
 
-
     JSON_READABLE(CameraParams,
                   initString,
                   width,
@@ -299,18 +298,22 @@ public:
 
     /**
      * @brief Encode params. The method doesn't encode initString.
-     * @param data Pointer to data buffer.
+     * @param data Pointer to data buffer. Buffer size must be >= 237 bytes.
+     * @brief bufferSize Data buffer size. Buffer size must be >= 237 bytes.
      * @param size Size of data.
      * @param mask Pointer to parameters mask structure.
+     * @return TRUE if params encoded or FALSE if not.
      */
-    void encode(uint8_t* data, int& size, CameraParamsMask* mask = nullptr);
+    bool encode(uint8_t* data, int bufferSize, int& size,
+                CameraParamsMask* mask = nullptr);
 
     /**
      * @brief Decode params. The method doesn't decode initString.
      * @param data Pointer to data.
+     * @brief dataSize Size of data.
      * @return TRUE is params decoded or FALSE if not.
      */
-    bool decode(uint8_t* data);
+    bool decode(uint8_t* data, int dataSize);
 };
 
 
@@ -472,7 +475,7 @@ enum class CameraParam
     /// ALC gate. Value depends on implementation.
     ALC_GATE,
     /// Sensor sensitivity. Value depends on implementation.
-    SENSETIVITY,
+    SENSITIVITY,
     /// Changing mode (day / night). Value depends on implementation.
     CHANGING_MODE,
     /// Changing level (day / night). Value depends on implementation.
@@ -587,7 +590,7 @@ public:
 
     /**
      * @brief Encode command.
-     * @param data Pointer to data buffer. Must have size >= 11.
+     * @param data Pointer to data buffer. Must have size >= 7.
      * @param size Size of encoded data.
      * @param id Camera command ID.
      */
@@ -608,6 +611,14 @@ public:
                              CameraParam& paramId,
                              CameraCommand& commandId,
                              float& value);
+
+    /**
+     * @brief Decode and execute command.
+     * @param data Pointer to command data.
+     * @param size Size of data.
+     * @return 0 - command decoded, 1 - set param command decoded, -1 - error.
+     */
+    virtual bool decodeAndExecuteCommand(uint8_t* data, int size) = 0;
 };
 }
 }

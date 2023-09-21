@@ -3,7 +3,6 @@
 
 
 
-/// Get camera controller version.
 std::string cr::camera::Camera::getVersion()
 {
     return CAMERA_VERSION;
@@ -11,7 +10,6 @@ std::string cr::camera::Camera::getVersion()
 
 
 
-/// Copy operator.
 cr::camera::CameraParams &cr::camera::CameraParams::operator= (const cr::camera::CameraParams &src)
 {
     // Check yourself.
@@ -84,10 +82,13 @@ cr::camera::CameraParams &cr::camera::CameraParams::operator= (const cr::camera:
 
 
 
-/// Encode params.
-void cr::camera::CameraParams::encode(
-        uint8_t* data, int& size, CameraParamsMask* mask)
+bool cr::camera::CameraParams::encode(
+    uint8_t* data, int bufferSize, int& size, CameraParamsMask* mask)
 {
+    // Check buffer size.
+    if (bufferSize < 237)
+        return false;
+
     // Encode version.
     int pos = 0;
     data[pos] = 0x02; pos += 1;
@@ -175,7 +176,7 @@ void cr::camera::CameraParams::encode(
 
         size = pos;
 
-        return;
+        return true;
     }
 
     // Prepare mask.
@@ -496,13 +497,18 @@ void cr::camera::CameraParams::encode(
     }
 
     size = pos;
+
+    return true;
 }
 
 
 
-/// Decode params.
-bool cr::camera::CameraParams::decode(uint8_t* data)
+bool cr::camera::CameraParams::decode(uint8_t* data, int dataSize)
 {
+    // Check data size.
+    if (dataSize < 12)
+        return false;
+
     // Check header.
     if (data[0] != 0x02)
         return false;
@@ -517,6 +523,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
 
     if ((data[3] & (uint8_t)128) == (uint8_t)128)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&width, &data[pos], 4); pos += 4;
     }
     else
@@ -525,6 +533,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[3] & (uint8_t)64) == (uint8_t)64)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&height, &data[pos], 4); pos += 4;
     }
     else
@@ -533,6 +543,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[3] & (uint8_t)32) == (uint8_t)32)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&displayMode, &data[pos], 4); pos += 4;
     }
     else
@@ -541,6 +553,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[3] & (uint8_t)16) == (uint8_t)16)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&videoOutput, &data[pos], 4); pos += 4;
     }
     else
@@ -549,6 +563,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[3] & (uint8_t)8) == (uint8_t)8)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&logMode, &data[pos], 4); pos += 4;
     }
     else
@@ -557,6 +573,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[3] & (uint8_t)4) == (uint8_t)4)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&exposureMode, &data[pos], 4); pos += 4;
     }
     else
@@ -565,6 +583,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[3] & (uint8_t)2) == (uint8_t)2)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&exposureTime, &data[pos], 4); pos += 4;
     }
     else
@@ -573,6 +593,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[3] & (uint8_t)1) == (uint8_t)1)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&whiteBalanceMode, &data[pos], 4); pos += 4;
     }
     else
@@ -584,6 +606,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
 
     if ((data[4] & (uint8_t)128) == (uint8_t)128)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&whiteBalanceArea, &data[pos], 4); pos += 4;
     }
     else
@@ -592,6 +616,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[4] & (uint8_t)64) == (uint8_t)64)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&wideDynamicRangeMode, &data[pos], 4); pos += 4;
     }
     else
@@ -600,6 +626,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[4] & (uint8_t)32) == (uint8_t)32)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&stabilisationMode, &data[pos], 4); pos += 4;
     }
     else
@@ -608,6 +636,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[4] & (uint8_t)16) == (uint8_t)16)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&isoSensetivity, &data[pos], 4); pos += 4;
     }
     else
@@ -616,6 +646,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[4] & (uint8_t)8) == (uint8_t)8)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&sceneMode, &data[pos], 4); pos += 4;
     }
     else
@@ -624,6 +656,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[4] & (uint8_t)4) == (uint8_t)4)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&fps, &data[pos], 4); pos += 4;
     }
     else
@@ -632,6 +666,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[4] & (uint8_t)2) == (uint8_t)2)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&brightnessMode, &data[pos], 4); pos += 4;
     }
     else
@@ -640,6 +676,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[4] & (uint8_t)1) == (uint8_t)1)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&brightness, &data[pos], 4); pos += 4;
     }
     else
@@ -651,6 +689,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
 
     if ((data[5] & (uint8_t)128) == (uint8_t)128)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&contrast, &data[pos], 4); pos += 4;
     }
     else
@@ -659,6 +699,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[5] & (uint8_t)64) == (uint8_t)64)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&gainMode, &data[pos], 4); pos += 4;
     }
     else
@@ -667,6 +709,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[5] & (uint8_t)32) == (uint8_t)32)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&gain, &data[pos], 4); pos += 4;
     }
     else
@@ -675,6 +719,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[5] & (uint8_t)16) == (uint8_t)16)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&sharpeningMode, &data[pos], 4); pos += 4;
     }
     else
@@ -683,6 +729,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[5] & (uint8_t)8) == (uint8_t)8)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&sharpening, &data[pos], 4); pos += 4;
     }
     else
@@ -691,6 +739,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[5] & (uint8_t)4) == (uint8_t)4)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&palette, &data[pos], 4); pos += 4;
     }
     else
@@ -699,6 +749,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[5] & (uint8_t)2) == (uint8_t)2)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&agcMode, &data[pos], 4); pos += 4;
     }
     else
@@ -707,6 +759,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[5] & (uint8_t)1) == (uint8_t)1)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&shutterMode, &data[pos], 4); pos += 4;
     }
     else
@@ -717,6 +771,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
 
     if ((data[6] & (uint8_t)128) == (uint8_t)128)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&shutterPos, &data[pos], 4); pos += 4;
     }
     else
@@ -725,6 +781,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[6] & (uint8_t)64) == (uint8_t)64)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&shutterSpeed, &data[pos], 4); pos += 4;
     }
     else
@@ -733,6 +791,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[6] & (uint8_t)32) == (uint8_t)32)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&digitalZoomMode, &data[pos], 4); pos += 4;
     }
     else
@@ -741,6 +801,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[6] & (uint8_t)16) == (uint8_t)16)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&digitalZoom, &data[pos], 4); pos += 4;
     }
     else
@@ -749,6 +811,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[6] & (uint8_t)8) == (uint8_t)8)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&exposureCompensationMode, &data[pos], 4); pos += 4;
     }
     else
@@ -757,6 +821,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[6] & (uint8_t)4) == (uint8_t)4)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&exposureCompensationPosition, &data[pos], 4); pos += 4;
     }
     else
@@ -765,6 +831,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[6] & (uint8_t)2) == (uint8_t)2)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&defogMode, &data[pos], 4); pos += 4;
     }
     else
@@ -773,6 +841,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[6] & (uint8_t)1) == (uint8_t)1)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&dehazeMode, &data[pos], 4); pos += 4;
     }
     else
@@ -784,6 +854,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
 
     if ((data[7] & (uint8_t)128) == (uint8_t)128)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&noiseReductionMode, &data[pos], 4); pos += 4;
     }
     else
@@ -792,6 +864,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[7] & (uint8_t)64) == (uint8_t)64)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&blackAndWhiteFilterMode, &data[pos], 4); pos += 4;
     }
     else
@@ -800,6 +874,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[7] & (uint8_t)32) == (uint8_t)32)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&filterMode, &data[pos], 4); pos += 4;
     }
     else
@@ -808,6 +884,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[7] & (uint8_t)16) == (uint8_t)16)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&nucMode, &data[pos], 4); pos += 4;
     }
     else
@@ -816,6 +894,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[7] & (uint8_t)8) == (uint8_t)8)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&autoNucIntervalMsec, &data[pos], 4); pos += 4;
     }
     else
@@ -824,6 +904,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[7] & (uint8_t)4) == (uint8_t)4)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&imageFlip, &data[pos], 4); pos += 4;
     }
     else
@@ -832,6 +914,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[7] & (uint8_t)2) == (uint8_t)2)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&ddeMode, &data[pos], 4); pos += 4;
     }
     else
@@ -840,6 +924,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[7] & (uint8_t)1) == (uint8_t)1)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&ddeLevel, &data[pos], 4); pos += 4;
     }
     else
@@ -851,6 +937,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
 
     if ((data[8] & (uint8_t)128) == (uint8_t)128)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&roiX0, &data[pos], 4); pos += 4;
     }
     else
@@ -859,6 +947,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[8] & (uint8_t)64) == (uint8_t)64)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&roiY0, &data[pos], 4); pos += 4;
     }
     else
@@ -867,6 +957,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[8] & (uint8_t)32) == (uint8_t)32)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&roiX1, &data[pos], 4); pos += 4;
     }
     else
@@ -875,6 +967,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[8] & (uint8_t)16) == (uint8_t)16)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&roiY1, &data[pos], 4); pos += 4;
     }
     else
@@ -883,6 +977,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[8] & (uint8_t)8) == (uint8_t)8)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&temperature, &data[pos], 4); pos += 4;
     }
     else
@@ -891,6 +987,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[8] & (uint8_t)4) == (uint8_t)4)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&alcGate, &data[pos], 4); pos += 4;
     }
     else
@@ -899,6 +997,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[8] & (uint8_t)2) == (uint8_t)2)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&sensitivity, &data[pos], 4); pos += 4;
     }
     else
@@ -907,6 +1007,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[8] & (uint8_t)1) == (uint8_t)1)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&changingMode, &data[pos], 4); pos += 4;
     }
     else
@@ -918,6 +1020,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
 
     if ((data[9] & (uint8_t)128) == (uint8_t)128)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&changingLevel, &data[pos], 4); pos += 4;
     }
     else
@@ -926,6 +1030,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[9] & (uint8_t)64) == (uint8_t)64)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&chromaLevel, &data[pos], 4); pos += 4;
     }
     else
@@ -934,6 +1040,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[9] & (uint8_t)32) == (uint8_t)32)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&detail, &data[pos], 4); pos += 4;
     }
     else
@@ -942,6 +1050,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[9] & (uint8_t)16) == (uint8_t)16)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&profile, &data[pos], 4); pos += 4;
     }
     else
@@ -950,6 +1060,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[9] & (uint8_t)8) == (uint8_t)8)
     {
+        if (dataSize < pos + 1)
+            return false;
         isConnected = data[pos] == 0x00 ? false : true; pos += 1;
     }
     else
@@ -958,6 +1070,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[9] & (uint8_t)4) == (uint8_t)4)
     {
+        if (dataSize < pos + 1)
+            return false;
         isOpen = data[pos] == 0x00 ? false : true; pos += 1;
     }
     else
@@ -966,6 +1080,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[9] & (uint8_t)2) == (uint8_t)2)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&type, &data[pos], 4); pos += 4;
     }
     else
@@ -974,6 +1090,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[9] & (uint8_t)1) == (uint8_t)1)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&custom1, &data[pos], 4); pos += 4;
     }
     else
@@ -985,6 +1103,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
 
     if ((data[10] & (uint8_t)128) == (uint8_t)128)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&custom2, &data[pos], 4); pos += 4;
     }
     else
@@ -993,6 +1113,8 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
     }
     if ((data[10] & (uint8_t)64) == (uint8_t)64)
     {
+        if (dataSize < pos + 4)
+            return false;
         memcpy(&custom3, &data[pos], 4);
     }
     else
@@ -1007,7 +1129,6 @@ bool cr::camera::CameraParams::decode(uint8_t* data)
 
 
 
-/// Encode set param command.
 void cr::camera::Camera::encodeSetParamCommand(
         uint8_t* data, int& size, CameraParam id, float value)
 {
@@ -1025,7 +1146,6 @@ void cr::camera::Camera::encodeSetParamCommand(
 
 
 
-/// Encode command.
 void cr::camera::Camera::encodeCommand(uint8_t* data,
                                    int& size,
                                    cr::camera::CameraCommand id)
@@ -1043,12 +1163,11 @@ void cr::camera::Camera::encodeCommand(uint8_t* data,
 
 
 
-/// Decode command.
 int cr::camera::Camera::decodeCommand(uint8_t* data,
-                                  int size,
-                                  cr::camera::CameraParam& paramId,
-                                  cr::camera::CameraCommand& commandId,
-                                  float& value)
+                                      int size,
+                                      cr::camera::CameraParam& paramId,
+                                      cr::camera::CameraCommand& commandId,
+                                      float& value)
 {
     // Check size.
     if (size < 7)
@@ -1062,7 +1181,6 @@ int cr::camera::Camera::decodeCommand(uint8_t* data,
     int id = 0;
     memcpy(&id, &data[3], 4);
     value = 0.0f;
-
 
     // Check command type.
     if (data[0] == 0x00)
@@ -1083,5 +1201,3 @@ int cr::camera::Camera::decodeCommand(uint8_t* data,
 
     return -1;
 }
-
-

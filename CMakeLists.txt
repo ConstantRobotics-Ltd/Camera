@@ -31,6 +31,7 @@ endif()
 ################################################################################
 SET(${PARENT}_CAMERA                         ON  CACHE BOOL "" ${REWRITE_FORCE})
 SET(${PARENT}_CAMERA_TEST                    ON  CACHE BOOL "" ${REWRITE_FORCE})
+SET(${PARENT}_CAMERA_EXAMPLE                 ON  CACHE BOOL "" ${REWRITE_FORCE})
 
 
 
@@ -45,5 +46,9 @@ endif()
 
 if (${PARENT}_CAMERA_TEST)
     add_subdirectory(test)
+endif()
+
+if (${PARENT}_CAMERA_EXAMPLE)
+    add_subdirectory(example)
 endif()
 
