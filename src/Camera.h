@@ -616,7 +616,7 @@ public:
      * @brief Decode and execute command.
      * @param data Pointer to command data.
      * @param size Size of data.
-     * @return 0 - command decoded, 1 - set param command decoded, -1 - error.
+     * @return TRUE if command decoded and executed or FALSE if not.
      */
     virtual bool decodeAndExecuteCommand(uint8_t* data, int size) = 0;
 };
