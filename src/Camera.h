@@ -566,10 +566,9 @@ public:
 
     /**
      * @brief Get the camera controller params.
-     * @param id Param ID.
-     * @return Camera params structure.
+     * @param params reference to CameraParams object.
      */
-    virtual CameraParams getParams() = 0;
+    virtual void getParams(CameraParams& params) = 0;
 
     /**
      * @brief Execute camera controller command.

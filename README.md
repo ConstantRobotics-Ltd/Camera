@@ -4,7 +4,7 @@
 
 # **Camera interface C++ library**
 
-**v2.2.1**
+**v2.3.0**
 
 
 
@@ -63,6 +63,7 @@
 | 2.1.0   | 12.07.2023   | - Added CameraParamsMask structure.<br />- Names of params updated.<br />- Updated encode(...) and decode(...) methods of CameraParams. |
 | 2.2.0   | 20.09.2023   | - Updated encode(...) and decode(...) methods of CameraParams.<br />- Added decodeAndExecuteCommand(...) method.<br />- Added example of camera controller implementation. |
 | 2.2.1   | 22.09.2023   | - Fixed mistakes in documentation.                           |
+| 2.3.0   | 26.09.2023   | - Changed getParams method return type.                      |
 
 
 
@@ -175,7 +176,7 @@ cout << "Camera class version: " << Camera::getVersion() << endl;
 Console output:
 
 ```bash
-Camera class version: 2.2.1
+Camera class version: 2.3.0
 ```
 
 
@@ -284,10 +285,14 @@ virtual float getParam(CameraParam id) = 0;
 **getParams(...)** method designed to obtain camera parameters. The particular implementation of the camera controller must provide thread-safe **getParams(...)** method call. This means that the **getParams(...)** method can be safely called from any thread. Method declaration:
 
 ```cpp
-virtual CameraParams getParams() = 0;
+virtual void getParams(CameraParams& params) = 0;
 ```
 
-**Returns:** [**CameraParams class**](#CameraParams-class-description) which contains all current camera params.
+| Parameter | Description                                                  |
+| --------- | ------------------------------------------------------------ |
+| params    | Reference to CameraParams object to store params.            |
+
+
 
 
 
@@ -328,7 +333,7 @@ static void encodeSetParamCommand(uint8_t* data, int& size, CameraParam id, floa
 | ---- | ----- | -------------------------------------------------- |
 | 0    | 0x01  | SET_PARAM command header value.                    |
 | 1    | 0x02  | Major version of Camera class.                     |
-| 2    | 0x02  | Minor version of Camera class.                     |
+| 2    | 0x03  | Minor version of Camera class.                     |
 | 3    | id    | Parameter ID **int32_t** in Little-endian format.  |
 | 4    | id    | Parameter ID **int32_t** in Little-endian format.  |
 | 5    | id    | Parameter ID **int32_t** in Little-endian format.  |
@@ -373,7 +378,7 @@ static void encodeCommand(uint8_t* data, int& size, CameraCommand id);
 | ---- | ----- | ----------------------------------------------- |
 | 0    | 0x00  | COMMAND header value.                           |
 | 1    | 0x02  | Major version of Camera class.                  |
-| 2    | 0x02  | Minor version of Camera class.                  |
+| 2    | 0x03  | Minor version of Camera class.                  |
 | 3    | id    | Command ID **int32_t** in Little-endian format. |
 | 4    | id    | Command ID **int32_t** in Little-endian format. |
 | 5    | id    | Command ID **int32_t** in Little-endian format. |

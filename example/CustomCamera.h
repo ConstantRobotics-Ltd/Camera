@@ -81,10 +81,9 @@ public:
 
     /**
      * @brief Get the camera controller params.
-     * @param id Param ID.
-     * @return Camera params structure.
+     * @param params reference to CameraParams object.
      */
-    CameraParams getParams();
+    void getParams(CameraParams& params);
 
     /**
      * @brief Execute camera controller command.
