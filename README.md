@@ -132,7 +132,7 @@ public:
     virtual float getParam(CameraParam id) = 0;
     
     /// Get the camera controller params structure.
-    virtual CameraParams getParams() = 0;
+    virtual void getParams(CameraParams& params) = 0;
     
     /// Execute camera controller command.
     virtual bool executeCommand(CameraCommand id) = 0;
