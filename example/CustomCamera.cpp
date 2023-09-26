@@ -684,9 +684,9 @@ float cr::camera::CustomCamera::getParam(CameraParam id)
 
 
 
-cr::camera::CameraParams cr::camera::CustomCamera::getParams()
+void cr::camera::CustomCamera::getParams(CameraParams& params)
 {
-    return m_params;
+    params = m_params;
 }
 
 
