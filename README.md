@@ -4,7 +4,7 @@
 
 # **Camera interface C++ library**
 
-**v2.3.0**
+**v2.4.0**
 
 
 
@@ -64,6 +64,7 @@
 | 2.2.0   | 20.09.2023   | - Updated encode(...) and decode(...) methods of CameraParams.<br />- Added decodeAndExecuteCommand(...) method.<br />- Added example of camera controller implementation. |
 | 2.2.1   | 22.09.2023   | - Fixed mistakes in documentation.                           |
 | 2.3.0   | 26.09.2023   | - Changed getParams method return type.                      |
+| 2.4.0   | 13.12.2023   | - Virtual destructor added.                      |
 
 
 
@@ -107,6 +108,10 @@ src ------------------------------ Folder with source code of the library.
 class Camera
 {
 public:
+
+    /// Class destructor.
+    virtual ~Camera();
+
     /// Get Camera class version.
     static std::string getVersion();
     
@@ -176,7 +181,7 @@ cout << "Camera class version: " << Camera::getVersion() << endl;
 Console output:
 
 ```bash
-Camera class version: 2.3.0
+Camera class version: 2.4.0
 ```
 
 
