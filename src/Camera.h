@@ -512,6 +512,11 @@ class Camera
 public:
 
     /**
+     * @brief Class destructor.
+     */
+    virtual ~Camera();
+
+    /**
      * @brief Get Camera class version.
      * @return String of current class version.
      */
