@@ -3,6 +3,12 @@
 
 
 
+cr::camera::Camera::~Camera()
+{
+    
+}
+
+
 std::string cr::camera::Camera::getVersion()
 {
     return CAMERA_VERSION;
