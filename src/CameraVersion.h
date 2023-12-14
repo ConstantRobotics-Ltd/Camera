@@ -1,7 +1,7 @@
 #pragma once
 
 #define CAMERA_MAJOR_VERSION 2
-#define CAMERA_MINOR_VERSION 3
+#define CAMERA_MINOR_VERSION 4
 #define CAMERA_PATCH_VERSION 0
 
-#define CAMERA_VERSION "2.3.0"
+#define CAMERA_VERSION "2.4.0"
