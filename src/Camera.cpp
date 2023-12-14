@@ -5,8 +5,9 @@
 
 cr::camera::Camera::~Camera()
 {
-    
+
 }
+
 
 
 std::string cr::camera::Camera::getVersion()
