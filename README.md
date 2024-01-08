@@ -4,7 +4,7 @@
 
 # **Camera interface C++ library**
 
-**v2.4.0**
+**v2.5.0**
 
 
 
@@ -64,7 +64,8 @@
 | 2.2.0   | 20.09.2023   | - Updated encode(...) and decode(...) methods of CameraParams.<br />- Added decodeAndExecuteCommand(...) method.<br />- Added example of camera controller implementation. |
 | 2.2.1   | 22.09.2023   | - Fixed mistakes in documentation.                           |
 | 2.3.0   | 26.09.2023   | - Changed getParams method return type.                      |
-| 2.4.0   | 13.12.2023   | - Virtual destructor added.                      |
+| 2.4.0   | 13.12.2023   | - Virtual destructor added.                                  |
+| 2.5.0   | 08.01.2024   | - Name of parameters updated.                                |
 
 
 
@@ -337,8 +338,8 @@ static void encodeSetParamCommand(uint8_t* data, int& size, CameraParam id, floa
 | Byte | Value | Description                                        |
 | ---- | ----- | -------------------------------------------------- |
 | 0    | 0x01  | SET_PARAM command header value.                    |
-| 1    | 0x02  | Major version of Camera class.                     |
-| 2    | 0x03  | Minor version of Camera class.                     |
+| 1    | Major | Major version of Camera class.                     |
+| 2    | Minor | Minor version of Camera class.                     |
 | 3    | id    | Parameter ID **int32_t** in Little-endian format.  |
 | 4    | id    | Parameter ID **int32_t** in Little-endian format.  |
 | 5    | id    | Parameter ID **int32_t** in Little-endian format.  |
@@ -382,8 +383,8 @@ static void encodeCommand(uint8_t* data, int& size, CameraCommand id);
 | Byte | Value | Description                                     |
 | ---- | ----- | ----------------------------------------------- |
 | 0    | 0x00  | COMMAND header value.                           |
-| 1    | 0x02  | Major version of Camera class.                  |
-| 2    | 0x03  | Minor version of Camera class.                  |
+| 1    | Major | Major version of Camera class.                  |
+| 2    | Minor | Minor version of Camera class.                  |
 | 3    | id    | Command ID **int32_t** in Little-endian format. |
 | 4    | id    | Command ID **int32_t** in Little-endian format. |
 | 5    | id    | Command ID **int32_t** in Little-endian format. |
@@ -534,7 +535,7 @@ enum class CameraParam
     WHITE_BALANCE_AREA,
     /// White dynamic range mode. Value depends on implementation but it is
     /// recommended to keep default values: 0 - Off, 1 - On.
-    WIDE_DINAMIC_RANGE_MODE,
+    WIDE_DYNAMIC_RANGE_MODE,
     /// Image stabilization mode. Value depends on implementation but it is
     /// recommended to keep default values: 0 - Off, 1 - On.
     STABILIZATION_MODE,
@@ -627,7 +628,7 @@ enum class CameraParam
     /// ALC gate. Value depends on implementation.
     ALC_GATE,
     /// Sensor sensitivity. Value depends on implementation.
-    SENSETIVITY,
+    SENSITIVITY,
     /// Changing mode (day / night). Value depends on implementation.
     CHANGING_MODE,
     /// Changing level (day / night). Value depends on implementation.
@@ -638,7 +639,7 @@ enum class CameraParam
     DETAIL,
     /// Camera settings profile. Value depends on implementation.
     PROFILE,
-    /// Connection status (read only). Shows if we have respons from camera.
+    /// Connection status (read only). Shows if we have respone from camera.
     /// Value: 0 - not connected, 2 - connected.
     IS_CONNECTED,
     /// Open status (read only):
@@ -668,7 +669,7 @@ enum class CameraParam
 | EXPOSURE_TIME                  | read / write | Exposure time of the camera sensor. The exposure time is limited by the frame interval. Camera controller should interpret the values as 100 µs units, where the value 1 stands for 1/10000th of a second, 10000 for 1 second and 100000 for 10 seconds. |
 | WHITE_BALANCE_MODE             | read / write | White balance mode. Value depends on implementation but it is recommended to keep default values: 0 - Manual, 1 - Auto. |
 | WHITE_BALANCE_AREA             | read / write | White balance area. Value depends on implementation.         |
-| WHITE_DINAMIC_RANGE_MODE       | read / write | White dynamic range mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
+| WIDE_DYNAMIC_RANGE_MODE        | read / write | White dynamic range mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
 | STABILIZATION_MODE             | read / write | Image stabilization mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
 | ISO_SENSITIVITY                | read / write | ISO sensitivity. Value depends on implementation.            |
 | SCENE_MODE                     | read / write | Scene mode. Value depends on implementation.                 |
@@ -1379,4 +1380,3 @@ private:
     CameraParams m_params;
 };
 ```
-

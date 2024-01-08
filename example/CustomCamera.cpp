@@ -134,7 +134,7 @@ bool cr::camera::CustomCamera::setParam(CameraParam id, float value)
         m_params.whiteBalanceArea = (int)value;
         return true;
     }
-    case CameraParam::WIDE_DINAMIC_RANGE_MODE:
+    case CameraParam::WIDE_DYNAMIC_RANGE_MODE:
     {
         // Save value.
         m_params.wideDynamicRangeMode = (int)value;
@@ -477,7 +477,7 @@ float cr::camera::CustomCamera::getParam(CameraParam id)
     {
         return (float)m_params.whiteBalanceArea;
     }
-    case CameraParam::WIDE_DINAMIC_RANGE_MODE:
+    case CameraParam::WIDE_DYNAMIC_RANGE_MODE:
     {
         return (float)m_params.wideDynamicRangeMode;
     }

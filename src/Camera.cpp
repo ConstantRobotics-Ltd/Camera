@@ -35,8 +35,8 @@ cr::camera::CameraParams &cr::camera::CameraParams::operator= (const cr::camera:
     whiteBalanceMode = src.whiteBalanceMode;
     whiteBalanceArea = src.whiteBalanceArea;
     wideDynamicRangeMode = src.wideDynamicRangeMode;
-    stabilisationMode = src.stabilisationMode;
-    isoSensetivity = src.isoSensetivity;
+    stabilizationMode = src.stabilizationMode;
+    isoSensitivity = src.isoSensitivity;
     sceneMode = src.sceneMode;
     fps = src.fps;
     brightnessMode = src.brightnessMode;
@@ -126,8 +126,8 @@ bool cr::camera::CameraParams::encode(
 
         memcpy(&data[pos], &whiteBalanceArea, 4); pos += 4;
         memcpy(&data[pos], &wideDynamicRangeMode, 4); pos += 4;
-        memcpy(&data[pos], &stabilisationMode, 4); pos += 4;
-        memcpy(&data[pos], &isoSensetivity, 4); pos += 4;
+        memcpy(&data[pos], &stabilizationMode, 4); pos += 4;
+        memcpy(&data[pos], &isoSensitivity, 4); pos += 4;
         memcpy(&data[pos], &sceneMode, 4); pos += 4;
         memcpy(&data[pos], &fps, 4); pos += 4;
         memcpy(&data[pos], &brightnessMode, 4); pos += 4;
@@ -200,8 +200,8 @@ bool cr::camera::CameraParams::encode(
     data[pos] = 0;
     data[pos] = data[pos] | (mask->whiteBalanceArea ? (uint8_t)128 : (uint8_t)0);
     data[pos] = data[pos] | (mask->wideDynamicRangeMode ? (uint8_t)64 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->stabilisationMode ? (uint8_t)32 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->isoSensetivity ? (uint8_t)16 : (uint8_t)0);
+    data[pos] = data[pos] | (mask->stabilizationMode ? (uint8_t)32 : (uint8_t)0);
+    data[pos] = data[pos] | (mask->isoSensitivity ? (uint8_t)16 : (uint8_t)0);
     data[pos] = data[pos] | (mask->sceneMode ? (uint8_t)8 : (uint8_t)0);
     data[pos] = data[pos] | (mask->fps ? (uint8_t)4 : (uint8_t)0);
     data[pos] = data[pos] | (mask->brightnessMode ? (uint8_t)2 : (uint8_t)0);
@@ -304,13 +304,13 @@ bool cr::camera::CameraParams::encode(
     {
         memcpy(&data[pos], &wideDynamicRangeMode, 4); pos += 4;
     }
-    if (mask->stabilisationMode)
+    if (mask->stabilizationMode)
     {
-        memcpy(&data[pos], &stabilisationMode, 4); pos += 4;
+        memcpy(&data[pos], &stabilizationMode, 4); pos += 4;
     }
-    if (mask->isoSensetivity)
+    if (mask->isoSensitivity)
     {
-        memcpy(&data[pos], &isoSensetivity, 4); pos += 4;
+        memcpy(&data[pos], &isoSensitivity, 4); pos += 4;
     }
     if (mask->sceneMode)
     {
@@ -635,21 +635,21 @@ bool cr::camera::CameraParams::decode(uint8_t* data, int dataSize)
     {
         if (dataSize < pos + 4)
             return false;
-        memcpy(&stabilisationMode, &data[pos], 4); pos += 4;
+        memcpy(&stabilizationMode, &data[pos], 4); pos += 4;
     }
     else
     {
-        stabilisationMode = 0;
+        stabilizationMode = 0;
     }
     if ((data[4] & (uint8_t)16) == (uint8_t)16)
     {
         if (dataSize < pos + 4)
             return false;
-        memcpy(&isoSensetivity, &data[pos], 4); pos += 4;
+        memcpy(&isoSensitivity, &data[pos], 4); pos += 4;
     }
     else
     {
-        isoSensetivity = 0;
+        isoSensitivity = 0;
     }
     if ((data[4] & (uint8_t)8) == (uint8_t)8)
     {

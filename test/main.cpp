@@ -3,7 +3,7 @@
 
 
 
-/// Link namesapces.
+/// Link namespaces.
 using namespace cr::camera;
 using namespace std;
 
@@ -92,8 +92,8 @@ bool copyTest()
     in.whiteBalanceMode = rand() % 255;
     in.whiteBalanceArea = rand() % 255;
     in.wideDynamicRangeMode = rand() % 255;
-    in.stabilisationMode = rand() % 255;
-    in.isoSensetivity = rand() % 255;
+    in.stabilizationMode = rand() % 255;
+    in.isoSensitivity = rand() % 255;
     in.sceneMode = rand() % 255;
     in.fps = rand() % 255;
     in.brightnessMode = rand() % 255;
@@ -201,14 +201,14 @@ bool copyTest()
         cout << "in.wideDynamicRangeMode" << endl;
         result = false;
     }
-    if (in.stabilisationMode != out.stabilisationMode)
+    if (in.stabilizationMode != out.stabilizationMode)
     {
-        cout << "in.stabilisationMode" << endl;
+        cout << "in.stabilizationMode" << endl;
         result = false;
     }
-    if (in.isoSensetivity != out.isoSensetivity)
+    if (in.isoSensitivity != out.isoSensitivity)
     {
-        cout << "in.isoSensetivity" << endl;
+        cout << "in.isoSensitivity" << endl;
         result = false;
     }
     if (in.sceneMode != out.sceneMode)
@@ -458,8 +458,8 @@ bool encodeDecodeParamsTest()
     in.whiteBalanceMode = rand() % 255;
     in.whiteBalanceArea = rand() % 255;
     in.wideDynamicRangeMode = rand() % 255;
-    in.stabilisationMode = rand() % 255;
-    in.isoSensetivity = rand() % 255;
+    in.stabilizationMode = rand() % 255;
+    in.isoSensitivity = rand() % 255;
     in.sceneMode = rand() % 255;
     in.fps = rand() % 255;
     in.brightnessMode = rand() % 255;
@@ -579,14 +579,14 @@ bool encodeDecodeParamsTest()
         cout << "in.wideDynamicRangeMode" << endl;
         result = false;
     }
-    if (in.stabilisationMode != out.stabilisationMode)
+    if (in.stabilizationMode != out.stabilizationMode)
     {
-        cout << "in.stabilisationMode" << endl;
+        cout << "in.stabilizationMode" << endl;
         result = false;
     }
-    if (in.isoSensetivity != out.isoSensetivity)
+    if (in.isoSensitivity != out.isoSensitivity)
     {
-        cout << "in.isoSensetivity" << endl;
+        cout << "in.isoSensitivity" << endl;
         result = false;
     }
     if (in.sceneMode != out.sceneMode)
@@ -839,7 +839,7 @@ bool encodeDecodeCommandsTest()
         return false;
     }
 
-    // Checkk ID and value.
+    // Check ID and value.
     if (commandId != CameraCommand::NUC)
     {
         cout << "not a CameraCommand::NUC" << endl;
@@ -858,7 +858,7 @@ bool encodeDecodeCommandsTest()
         return false;
     }
 
-    // Checkk ID and value.
+    // Check ID and value.
     if (paramId != CameraParam::ROI_X0)
     {
         cout << "not a CameraParam::ROI_X0" << endl;
@@ -891,8 +891,8 @@ bool jsonReadWriteTest()
     in.whiteBalanceMode = rand() % 255;
     in.whiteBalanceArea = rand() % 255;
     in.wideDynamicRangeMode = rand() % 255;
-    in.stabilisationMode = rand() % 255;
-    in.isoSensetivity = rand() % 255;
+    in.stabilizationMode = rand() % 255;
+    in.isoSensitivity = rand() % 255;
     in.sceneMode = rand() % 255;
     in.fps = rand() % 255;
     in.brightnessMode = rand() % 255;
@@ -1017,14 +1017,14 @@ bool jsonReadWriteTest()
         cout << "in.wideDynamicRangeMode" << endl;
         result = false;
     }
-    if (in.stabilisationMode != out.stabilisationMode)
+    if (in.stabilizationMode != out.stabilizationMode)
     {
-        cout << "in.stabilisationMode" << endl;
+        cout << "in.stabilizationMode" << endl;
         result = false;
     }
-    if (in.isoSensetivity != out.isoSensetivity)
+    if (in.isoSensitivity != out.isoSensitivity)
     {
-        cout << "in.isoSensetivity" << endl;
+        cout << "in.isoSensitivity" << endl;
         result = false;
     }
     if (in.sceneMode != out.sceneMode)
@@ -1259,8 +1259,8 @@ bool encodeDecodeParamsWithMaskTest()
     in.whiteBalanceMode = rand() % 255;
     in.whiteBalanceArea = rand() % 255;
     in.wideDynamicRangeMode = rand() % 255;
-    in.stabilisationMode = rand() % 255;
-    in.isoSensetivity = rand() % 255;
+    in.stabilizationMode = rand() % 255;
+    in.isoSensitivity = rand() % 255;
     in.sceneMode = rand() % 255;
     in.fps = rand() % 255;
     in.brightnessMode = rand() % 255;
@@ -1321,8 +1321,8 @@ bool encodeDecodeParamsWithMaskTest()
 
     mask.whiteBalanceArea = true;
     mask.wideDynamicRangeMode = false;
-    mask.stabilisationMode = true;
-    mask.isoSensetivity = false;
+    mask.stabilizationMode = true;
+    mask.isoSensitivity = false;
     mask.sceneMode = true;
     mask.fps = false;
     mask.brightnessMode = true;
@@ -1451,14 +1451,14 @@ bool encodeDecodeParamsWithMaskTest()
         cout << "in.wideDynamicRangeMode" << endl;
         result = false;
     }
-    if (in.stabilisationMode != out.stabilisationMode)
+    if (in.stabilizationMode != out.stabilizationMode)
     {
-        cout << "in.stabilisationMode" << endl;
+        cout << "in.stabilizationMode" << endl;
         result = false;
     }
-    if (0 != out.isoSensetivity)
+    if (0 != out.isoSensitivity)
     {
-        cout << "in.isoSensetivity" << endl;
+        cout << "in.isoSensitivity" << endl;
         result = false;
     }
     if (in.sceneMode != out.sceneMode)

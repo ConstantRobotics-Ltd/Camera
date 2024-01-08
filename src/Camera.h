@@ -24,8 +24,8 @@ typedef struct CameraParamsMask
     bool whiteBalanceMode{true};
     bool whiteBalanceArea{true};
     bool wideDynamicRangeMode{true};
-    bool stabilisationMode{true};
-    bool isoSensetivity{true};
+    bool stabilizationMode{true};
+    bool isoSensitivity{true};
     bool sceneMode{true};
     bool fps{true};
     bool brightnessMode{true};
@@ -115,9 +115,9 @@ public:
     int wideDynamicRangeMode{0};
     /// Image stabilization mode. Value depends on implementation but it is
     /// recommended to keep default values: 0 - Off, 1 - On.
-    int stabilisationMode{0};
+    int stabilizationMode{0};
     /// ISO sensitivity. Value depends on implementation.
-    int isoSensetivity{0};
+    int isoSensitivity{0};
     /// Scene mode. Value depends on implementation.
     int sceneMode{0};
     /// FPS.
@@ -216,7 +216,7 @@ public:
     int detail{0};
     /// Camera settings profile. Value depends on implementation.
     int profile{0};
-    /// Connection status (read only). Shows if we have respons from camera.
+    /// Connection status (read only). Shows if we have response from camera.
     /// Value: false - not connected, true - connected.
     bool isConnected{false};
     /// Open status (read only):
@@ -231,68 +231,25 @@ public:
     /// Camera custom param. Value depends on implementation.
     float custom3{0.0f};
 
-    JSON_READABLE(CameraParams,
-                  initString,
-                  width,
-                  height,
-                  displayMode,
-                  videoOutput,
-                  logMode,
-                  exposureMode,
-                  exposureTime,
-                  whiteBalanceMode,
-                  whiteBalanceArea,
-                  wideDynamicRangeMode,
-                  stabilisationMode,
-                  isoSensetivity,
-                  sceneMode,
-                  fps,
-                  brightnessMode,
-                  brightness,
-                  contrast,
-                  gainMode,
-                  gain,
-                  sharpeningMode,
-                  sharpening,
-                  palette,
-                  agcMode,
-                  shutterMode,
-                  shutterPos,
-                  shutterSpeed,
-                  digitalZoomMode,
-                  digitalZoom,
-                  exposureCompensationMode,
-                  exposureCompensationPosition,
-                  defogMode,
-                  dehazeMode,
-                  noiseReductionMode,
-                  blackAndWhiteFilterMode,
-                  filterMode,
-                  nucMode,
-                  autoNucIntervalMsec,
-                  imageFlip,
-                  ddeMode,
-                  ddeLevel,
-                  roiX0,
-                  roiY0,
-                  roiX1,
-                  roiY1,
-                  alcGate,
-                  sensitivity,
-                  changingMode,
-                  changingLevel,
-                  chromaLevel,
-                  detail,
-                  profile,
-                  type,
-                  custom1,
-                  custom2,
-                  custom3)
+    JSON_READABLE(CameraParams, initString, width, height, displayMode,
+                  videoOutput, logMode, exposureMode, exposureTime,
+                  whiteBalanceMode, whiteBalanceArea, wideDynamicRangeMode,
+                  stabilizationMode, isoSensitivity, sceneMode, fps,
+                  brightnessMode, brightness, contrast, gainMode, gain,
+                  sharpeningMode, sharpening, palette, agcMode, shutterMode,
+                  shutterPos, shutterSpeed, digitalZoomMode, digitalZoom,
+                  exposureCompensationMode, exposureCompensationPosition,
+                  defogMode, dehazeMode, noiseReductionMode,
+                  blackAndWhiteFilterMode, filterMode, nucMode,
+                  autoNucIntervalMsec, imageFlip, ddeMode, ddeLevel, roiX0,
+                  roiY0, roiX1, roiY1, alcGate, sensitivity, changingMode,
+                  changingLevel, chromaLevel, detail, profile, type, custom1,
+                  custom2, custom3)
 
     /**
      * @brief operator =
      * @param src Source object.
-     * @return CameraParams obect.
+     * @return CameraParams object.
      */
     CameraParams& operator= (const CameraParams& src);
 
@@ -382,7 +339,7 @@ enum class CameraParam
     WHITE_BALANCE_AREA,
     /// White dynamic range mode. Value depends on implementation but it is
     /// recommended to keep default values: 0 - Off, 1 - On.
-    WIDE_DINAMIC_RANGE_MODE,
+    WIDE_DYNAMIC_RANGE_MODE,
     /// Image stabilization mode. Value depends on implementation but it is
     /// recommended to keep default values: 0 - Off, 1 - On.
     STABILIZATION_MODE,
@@ -486,7 +443,7 @@ enum class CameraParam
     DETAIL,
     /// Camera settings profile. Value depends on implementation.
     PROFILE,
-    /// Connection status (read only). Shows if we have respons from camera.
+    /// Connection status (read only). Shows if we have respone from camera.
     /// Value: 0 - not connected, 2 - connected.
     IS_CONNECTED,
     /// Open status (read only):
@@ -555,7 +512,7 @@ public:
     virtual bool isCameraConnected() = 0;
 
     /**
-     * @brief Set the camers controller param.
+     * @brief Set the camera controller param.
      * @param id Param ID.
      * @param value Param value.
      * @return TRUE if the property set or FALSE.
