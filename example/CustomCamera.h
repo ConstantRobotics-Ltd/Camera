@@ -65,7 +65,7 @@ public:
     bool isCameraConnected();
 
     /**
-     * @brief Set the camers controller param.
+     * @brief Set the camera controller param.
      * @param id Param ID.
      * @param value Param value.
      * @return TRUE if the property set or FALSE.

@@ -1,52 +1,50 @@
-![logo](_static/camera_web_logo.png)
+![camera_web_logo](_static/camera_web_logo.png)
 
 
 
 # **Camera interface C++ library**
 
-**v2.5.0**
+**v2.5.1**
 
 
 
 # Table of contents
 
-- [Overview](#Overview)
-- [Versions](#Versions)
-- [Library files](#Library-files)
-- [Camera interface class description](#Camera-interface-class-description)
-  - [Class declaration](#Class-declaration)
-  - [getVersion method](#getVersion-method)
-  - [openCamera method](#openCamera-method)
-  - [initCamera method](#initCamera-method)
-  - [closeCamera method](#closeCamera-method)
-  - [isCameraOpen method](#isCameraOpen-method)
-  - [isCameraConnected method](#isCameraConnected-method)
-  - [setParam method](#setParam-method)
-  - [getParam method](#getParam-method)
-  - [getParams method](#getParams-method)
-  - [executeCommand method](#executeCommand-method)
-  - [encodeSetParamCommand method](#encodeSetParamCommand-method)
-  - [encodeCommand method](#encodeCommand-method)
-  - [decodeCommand method](#decodeCommand-method)
-  - [decodeAndExecuteCommand method](#decodeAndExecuteCommand-method)
-- [Data structures](#Data-structures)
-  - [CameraCommand enum](#CameraCommand-enum)
-  - [CameraParam enum](#CameraParam-enum)
-- [CameraParams class description](#CameraParams-class-description)
-  - [Class declaration](#Class-declaration)
-  - [Serialize camera params](#Serialize-camera-params)
-  - [Deserialize camera params](#Deserialize-camera-params)
-  - [Read params from JSON file and write to JSON file](#Read-params-from-JSON-file-and-write-to-JSON-file)
-
-- [Build and connect to your project](#Build-and-connect-to-your-project)
-
-- [How to make custom implementation](#How-to-make-custom-implementation)
+- [Overview](#overview)
+- [Versions](#versions)
+- [Library files](#library-files)
+- [Camera interface class description](#camera-interface-class-description)
+  - [Camera class declaration](#camera-class-declaration)
+  - [getVersion method](#getversion-method)
+  - [openCamera method](#opencamera-method)
+  - [initCamera method](#initcamera-method)
+  - [closeCamera method](#closecamera-method)
+  - [isCameraOpen method](#iscameraopen-method)
+  - [isCameraConnected method](#iscameraconnected-method)
+  - [setParam method](#setparam-method)
+  - [getParam method](#getparam-method)
+  - [getParams method](#getparams-method)
+  - [executeCommand method](#executecommand-method)
+  - [encodeSetParamCommand method](#encodesetparamcommand-method)
+  - [encodeCommand method](#encodecommand-method)
+  - [decodeCommand method](#decodecommand-method)
+  - [decodeAndExecuteCommand method](#decodeandexecutecommand-method)
+- [Data structures](#data-structures)
+  - [CameraCommand enum](#cameracommand-enum)
+  - [CameraParam enum](#cameraparam-enum)
+- [CameraParams class description](#cameraparams-class-description)
+  - [CameraParams class declaration](#cameraparams-class-declaration)
+  - [Serialize camera params](#serialize-camera-params)
+  - [Deserialize camera params](#deserialize-camera-params)
+  - [Read params from JSON file and write to JSON file](#read-params-from-json-file-and-write-to-json-file)
+- [Build and connect to your project](#build-and-connect-to-your-project)
+- [How to make custom implementation](#how-to-make-custom-implementation)
 
 
 
 # Overview
 
-**Camera** C++ library provides standard interface as well defines data structures and rules for different camera controllers. **Camera** interface class doesn't do anything, just provides interface and provides methods to encode/decode commands and encode/decode params. Different camera controller classes inherit interface form **Camera** C++ class. **Camera.h** file contains list of data structures ([**CameraCommand enum**](#CameraCommand-enum), [**CameraParam enum**](#CameraParam-enum) and [**CameraParams class**](#CameraParams-class-description)) and **Camera** class declaration. [**CameraCommand enum**](#CameraCommand-enum) contains IDs of commands supported by **Camera** class. [**CameraParam enum**](#CameraParam-enum) contains IDs of params supported by **Camera** class. All camera controllers should include params and commands listed in **Camera.h** file. Camera interface class depends on [**ConfigReader**](https://github.com/ConstantRobotics-Ltd/ConfigReader) library (provides methods to read/write JSON config files).
+**Camera** C++ library provides standard interface as well defines data structures and rules for different camera controllers. **Camera** interface class doesn't do anything, just provides interface and provides methods to encode/decode commands and encode/decode params. Different camera controller classes inherit interface form **Camera** C++ class. **Camera.h** file contains list of data structures ([CameraCommand](#cameracommand-enum) enum, [CameraParam](#cameraparam-enum) enum and [CameraParams](#cameraparams-class-description) class) and **Camera** class declaration. [CameraCommand](#cameracommand-enum) enum contains IDs of commands supported by **Camera** class. [CameraParam](#cameraparam-enum) enum contains IDs of params supported by **Camera** class. All camera controllers should include params and commands listed in **Camera.h** file. Camera interface class depends on [ConfigReader](https://github.com/ConstantRobotics-Ltd/ConfigReader) library (provides methods to read/write JSON config files, source code included, Apache 2.0 license). It uses C++17 standard. The library is licensed under the **Apache 2.0** license.
 
 
 
@@ -66,33 +64,34 @@
 | 2.3.0   | 26.09.2023   | - Changed getParams method return type.                      |
 | 2.4.0   | 13.12.2023   | - Virtual destructor added.                                  |
 | 2.5.0   | 08.01.2024   | - Name of parameters updated.                                |
+| 2.5.1   | 25.03.2024   | - ConfigReader class updated. <br />- Documentation updated. |
 
 
 
 # Library files
 
-The **Camera** library is a CMake project. Library files:
+The library supplied by source code only. The user would be given a set of files in the form of a CMake project (repository). The repository structure is shown below:
 
 ```xml
-CMakeLists.txt ------------------- Main CMake file of the library.
-3rdparty ------------------------- Folder with third-party libraries.
-    CMakeLists.txt --------------- CMake file which includes third-party libraries.
-    ConfigReader ----------------- Source code of the ConfigReader library.
-example -------------------------- Folder with simple example of VCodecImsdk usage.
-    CMakeLists.txt --------------- CMake file for example custom camera class.
-    CustomCamera.cpp ------------- Source code file of the CustomCamera class.
-    CustomCamera.h --------------- Header with CustomCamera class declaration.
-    CustomCameraVersion.h -------- Header file which includes CustomCamera class version.
-    CustomCameraVersion.h.in ----- CMake service file to generate version file.
-test ----------------------------- Folder with codec test application.
-    CMakeLists.txt --------------- CMake file for codec test application.
-    main.cpp --------------------- Source code file of Camera class test application.
-src ------------------------------ Folder with source code of the library.
-    CMakeLists.txt --------------- CMake file of the library.
-    Camera.cpp ------------------- Source code file of the library.
-    Camera.h --------------------- Header file which includes Camera class declaration.
-    CameraVersion.h -------------- Header file which includes version of the library.
-    CameraVersion.h.in ----------- CMake service file to generate version file.
+CMakeLists.txt ----------------- Main CMake file of the library.
+3rdparty ----------------------- Folder with third-party libraries.
+    CMakeLists.txt ------------- CMake file which includes third-party libraries.
+    ConfigReader --------------- Source code of the ConfigReader library.
+example ------------------------ Folder with custom camera controller example.
+    CMakeLists.txt ------------- CMake file for example.
+    CustomCamera.cpp ----------- C++ implementation file.
+    CustomCamera.h ------------- Header with class declaration.
+    CustomCameraVersion.h ------ Header file which include class version.
+    CustomCameraVersion.h.in --- CMake service file to generate version file.
+test --------------------------- Folder with test application.
+    CMakeLists.txt ------------- CMake file for test application.
+    main.cpp ------------------- Source code file of test application.
+src ---------------------------- Folder with source code of the library.
+    CMakeLists.txt ------------- CMake file of the library.
+    Camera.cpp ----------------- Source code file of the library.
+    Camera.h ------------------- Header file which includes Camera class declaration.
+    CameraVersion.h ------------ Header file which includes version of the library.
+    CameraVersion.h.in --------- CMake service file to generate version file.
 ```
 
 
@@ -101,7 +100,7 @@ src ------------------------------ Folder with source code of the library.
 
 
 
-## Class declaration
+## Camera class declaration
 
 **Camera** interface class declared in **Camera.h** file. Class declaration:
 
@@ -167,7 +166,7 @@ public:
 
 ## getVersion method
 
-**getVersion()** method returns string of current class version. Particular camera controller can have it's own **getVersion()** method. Method declaration:
+The **getVersion()** method returns string of current class version. Particular camera controller can have it's own **getVersion()** method. Method declaration:
 
 ```cpp
 static std::string getVersion();
@@ -182,14 +181,14 @@ cout << "Camera class version: " << Camera::getVersion() << endl;
 Console output:
 
 ```bash
-Camera class version: 2.4.0
+Camera class version: 2.5.1
 ```
 
 
 
 ## openCamera method
 
-**openCamera(...)** method initializes camera controller. This method can be used instead of **initCamera(...)** method. Method declaration:
+The **openCamera(...)** method initializes camera controller. This method can be used instead of [initCamera(...)](#initcamera-method) method. Method declaration:
 
 ```cpp
 virtual bool openCamera(std::string initString) = 0;
@@ -205,7 +204,7 @@ virtual bool openCamera(std::string initString) = 0;
 
 ## initCamera method
 
-**initCamera(...)** method initializes camera controller by list of parameters. This method can be used instead of **openCamera(...)** method (**CameraParams** class includes **initString**) when you need initialize camera controller with not default parameters values. Method declaration:
+The **initCamera(...)** method initializes camera controller by list of parameters. This method can be used instead of [openCamera(...)](#opencamera-method) method ([CameraParams](#cameraparams-class-description) class includes **initString**) when you need initialize camera controller with not default parameters values. Method declaration:
 
 ```cpp
 virtual bool initCamera(CameraParams& params) = 0;
@@ -213,7 +212,7 @@ virtual bool initCamera(CameraParams& params) = 0;
 
 | Parameter | Value                                                        |
 | --------- | ------------------------------------------------------------ |
-| params    | Parameters (**CameraParams** class). CameraParams class includes initString wich used in **openCamera(...)** method. See description of **CameraParams** class. |
+| params    | [CameraParams](#cameraparams-class-description) class object. CameraParams class includes initString which used in [openCamera(...)](#opencamera-method) method. |
 
 **Returns:** TRUE if the camera controller initialized or FALSE if not.
 
@@ -221,7 +220,7 @@ virtual bool initCamera(CameraParams& params) = 0;
 
 ## closeCamera method
 
-**closeCamera()** method designed to close connection to camera. Method declaration:
+The **closeCamera()** method designed to close connection to camera. Method declaration:
 
 ```cpp
 virtual void closeCamera() = 0;
@@ -231,7 +230,7 @@ virtual void closeCamera() = 0;
 
 ## isCameraOpen method
 
-**isCameraOpen()** method returns camera initialization status. Open status shows if the camera controller initialized but doesn't show if camera controller has communication with camera equipment. For example, if camera has serial port and camera controller connected to serial port (opens serial port file in OS) but camera may be not active (no power). In this case open status just shows that camera controller has opened serial port. Method declaration:
+The **isCameraOpen()** method returns camera initialization status. Open status shows if the camera controller initialized but doesn't show if camera controller has communication with camera equipment. For example, if camera has serial port and camera controller connected to serial port (opens serial port file in OS) but camera may be not active (no power). In this case open status just shows that camera controller has opened serial port. Method declaration:
 
 ```cpp
 virtual bool isCameraOpen() = 0;
@@ -243,7 +242,7 @@ virtual bool isCameraOpen() = 0;
 
 ## isCameraConnected method
 
-**isCameraConnected()** method returns camera connection status. Connection status shows if the camera controller has data exchange with camera equipment. For example, if camera has serial port and camera controller connected to serial port (opens serial port file in OS) but camera may be not active (no power). In this case connection status shows that camera controller doesn't have data exchange with camera equipment (methos will return FALSE). If camera controller has data exchange with camera equipment the method will return TRUE. If camera controller not initialize the connection status always FALSE. Method declaration:
+The **isCameraConnected()** method returns camera connection status. Connection status shows if the camera controller has data exchange with camera equipment. For example, if camera has serial port and camera controller connected to serial port (opens serial port file in OS) but camera may be not active (no power). In this case connection status shows that camera controller doesn't have data exchange with camera equipment (method will return FALSE). If camera controller has data exchange with camera equipment the method will return TRUE. If camera controller not initialize the connection status always FALSE. Method declaration:
 
 ```cpp
 virtual bool isCameraConnected() = 0;
@@ -255,7 +254,7 @@ virtual bool isCameraConnected() = 0;
 
 ## setParam method
 
-**setParam(...)** method sets new camera controller parameters value. The particular implementation of the camera controller must provide thread-safe **setParam(...)** method call. This means that the **setParam(...)** method can be safely called from any thread. Method declaration:
+The **setParam(...)** method sets new camera controller parameters value. The particular implementation of the camera controller must provide thread-safe **setParam(...)** method call. This means that the **setParam(...)** method can be safely called from any thread. Method declaration:
 
 ```cpp
 virtual bool setParam(CameraParam id, float value) = 0;
@@ -263,8 +262,8 @@ virtual bool setParam(CameraParam id, float value) = 0;
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
-| id        | Camera controller parameter ID according to CameraParam enum (see description of **CameraParam** enum). |
-| value     | Camera controller parameter value. Value depends on parameter ID (see description of **CameraParam** enum). |
+| id        | Camera controller parameter ID according to [CameraParam](#cameraparam-enum) enum. |
+| value     | Camera controller parameter value. Value depends on parameter ID. |
 
 **Returns:** TRUE if the parameter was set or FALSE if not.
 
@@ -272,7 +271,7 @@ virtual bool setParam(CameraParam id, float value) = 0;
 
 ## getParam method
 
-**getParam(...)** method returns controller parameter value. The particular implementation of the camera controller must provide thread-safe **getParam(...)** method call. This means that the **getParam(...)** method can be safely called from any thread. Method declaration:
+The **getParam(...)** method returns controller parameter value. The particular implementation of the camera controller must provide thread-safe **getParam(...)** method call. This means that the **getParam(...)** method can be safely called from any thread. Method declaration:
 
 ```cpp
 virtual float getParam(CameraParam id) = 0;
@@ -280,7 +279,7 @@ virtual float getParam(CameraParam id) = 0;
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
-| id        | Camera controller parameter ID according to CameraParam enum (see description of [**CameraParam enum**](#CameraParam-enum)). |
+| id        | Camera controller parameter ID according to [CameraParam](#cameraparam-enum) enum. |
 
 **Returns:** parameter value or **-1** of the parameters doesn't exist in particular camera controller.
 
@@ -288,7 +287,7 @@ virtual float getParam(CameraParam id) = 0;
 
 ## getParams method
 
-**getParams(...)** method designed to obtain camera parameters. The particular implementation of the camera controller must provide thread-safe **getParams(...)** method call. This means that the **getParams(...)** method can be safely called from any thread. Method declaration:
+The **getParams(...)** method designed to obtain camera parameters. The particular implementation of the camera controller must provide thread-safe **getParams(...)** method call. This means that the **getParams(...)** method can be safely called from any thread. Method declaration:
 
 ```cpp
 virtual void getParams(CameraParams& params) = 0;
@@ -296,15 +295,13 @@ virtual void getParams(CameraParams& params) = 0;
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
-| params    | Reference to CameraParams object to store params.            |
-
-
+| params    | Output [CameraParams](#cameraparams-class-description) class object. |
 
 
 
 ## executeCommand method
 
-**executeCommand(...)** method executes camera controller command. The particular implementation of the camera controller must provide thread-safe **executeCommand(...)** method call. This means that the **executeCommand(...)** method can be safely called from any thread. Method declaration:
+The **executeCommand(...)** method executes camera controller command. The particular implementation of the camera controller must provide thread-safe **executeCommand(...)** method call. This means that the **executeCommand(...)** method can be safely called from any thread. Method declaration:
 
 ```cpp
 virtual bool executeCommand(CameraCommand id) = 0;
@@ -320,7 +317,7 @@ virtual bool executeCommand(CameraCommand id) = 0;
 
 ## encodeSetParamCommand method
 
-**encodeSetParamCommand(...)** static method encodes command to change any remote camera parameter value. To control a camera remotely, the developer has to design his own protocol and according to it encode the command and deliver it over the communication channel. To simplify this, the **Camera** class contains static methods for encoding the control command. The **Camera** class provides two types of commands: a parameter change command (SET_PARAM) and an action command (COMMAND). **encodeSetParamCommand(...)** designed to encode SET_PARAM command. Method declaration:
+The **encodeSetParamCommand(...)** static method encodes command to change any remote camera parameter value. To control a camera remotely, the developer has to design his own protocol and according to it encode the command and deliver it over the communication channel. To simplify this, the **Camera** class contains static methods for encoding the control command. The **Camera** class provides two types of commands: a parameter change command (SET_PARAM) and an action command (COMMAND). **encodeSetParamCommand(...)** designed to encode SET_PARAM command. Method declaration:
 
 ```cpp
 static void encodeSetParamCommand(uint8_t* data, int& size, CameraParam id, float value);
@@ -330,24 +327,8 @@ static void encodeSetParamCommand(uint8_t* data, int& size, CameraParam id, floa
 | --------- | ------------------------------------------------------------ |
 | data      | Pointer to data buffer for encoded command. Must have size >= 11. |
 | size      | Size of encoded data. Will be 11 bytes.                      |
-| id        | Parameter ID according to [**CameraParam enum**](#CameraParam-enum). |
+| id        | Parameter ID according to [CameraCommand](#cameracommand-enum) enum. |
 | value     | Parameter value.                                             |
-
-**SET_PARAM** command format:
-
-| Byte | Value | Description                                        |
-| ---- | ----- | -------------------------------------------------- |
-| 0    | 0x01  | SET_PARAM command header value.                    |
-| 1    | Major | Major version of Camera class.                     |
-| 2    | Minor | Minor version of Camera class.                     |
-| 3    | id    | Parameter ID **int32_t** in Little-endian format.  |
-| 4    | id    | Parameter ID **int32_t** in Little-endian format.  |
-| 5    | id    | Parameter ID **int32_t** in Little-endian format.  |
-| 6    | id    | Parameter ID **int32_t** in Little-endian format.  |
-| 7    | value | Parameter value **float** in Little-endian format. |
-| 8    | value | Parameter value **float** in Little-endian format. |
-| 9    | value | Parameter value **float** in Little-endian format. |
-| 10   | value | Parameter value **float** in Little-endian format. |
 
 **encodeSetParamCommand(...)** is static and used without **Camera** class instance. This method used on client side (control system). Command encoding example:
 
@@ -366,7 +347,7 @@ Camera::encodeSetParamCommand(data, size, CameraParam::ROI_X0, outValue);
 
 ## encodeCommand method
 
-**encodeCommand(...)** static method encodes command for camera remote control. To control a camera remotely, the developer has to design his own protocol and according to it encode the command and deliver it over the communication channel. To simplify this, the **Camera** class contains static methods for encoding the control command. The **Camera** class provides two types of commands: a parameter change command (SET_PARAM) and an action command (COMMAND). **encodeCommand(...)** designed to encode COMMAND command (action command). Method declaration:
+The **encodeCommand(...)** static method encodes command for camera remote control. To control a camera remotely, the developer has to design his own protocol and according to it encode the command and deliver it over the communication channel. To simplify this, the **Camera** class contains static methods for encoding the control command. The **Camera** class provides two types of commands: a parameter change command (SET_PARAM) and an action command (COMMAND). **encodeCommand(...)** designed to encode COMMAND command (action command). Method declaration:
 
 ```cpp
 static void encodeCommand(uint8_t* data, int& size, CameraCommand id);
@@ -376,19 +357,7 @@ static void encodeCommand(uint8_t* data, int& size, CameraCommand id);
 | --------- | ------------------------------------------------------------ |
 | data      | Pointer to data buffer for encoded command. Must have size >= 7. |
 | size      | Size of encoded data. Will be 7 bytes.                       |
-| id        | Command ID according to [**CameraCommand enum**](#CameraCommand-enum). |
-
-**COMMAND** format:
-
-| Byte | Value | Description                                     |
-| ---- | ----- | ----------------------------------------------- |
-| 0    | 0x00  | COMMAND header value.                           |
-| 1    | Major | Major version of Camera class.                  |
-| 2    | Minor | Minor version of Camera class.                  |
-| 3    | id    | Command ID **int32_t** in Little-endian format. |
-| 4    | id    | Command ID **int32_t** in Little-endian format. |
-| 5    | id    | Command ID **int32_t** in Little-endian format. |
-| 6    | id    | Command ID **int32_t** in Little-endian format. |
+| id        | Command ID according to [CameraParam](#cameraparam-enum) enum. |
 
 **encodeCommand(...)** is static and used without **Camera** class instance. This method used on client side (control system). Command encoding example:
 
@@ -405,7 +374,7 @@ Camera::encodeCommand(data, size, CameraCommand::NUC);
 
 ## decodeCommand method
 
-**decodeCommand(...)** static method decodes command on camera controller side. Method declaration:
+The **decodeCommand(...)** static method decodes command on camera controller side encoded by [encodeSetParamCommand(...)](#encodesetparamcommand-method) or [encodeCommand(...)](#encodecommand-method). Method declaration:
 
 ```cpp
 static int decodeCommand(uint8_t* data, int size, CameraParam& paramId, CameraCommand& commandId, float& value);
@@ -415,8 +384,8 @@ static int decodeCommand(uint8_t* data, int size, CameraParam& paramId, CameraCo
 | --------- | ------------------------------------------------------------ |
 | data      | Pointer to input command.                                    |
 | size      | Size of command. Must be 11 bytes for SET_PARAM and 7 bytes for COMMAND. |
-| paramId   | Camera parameter ID according to [**CameraParam enum**](#CameraParam-enum). After decoding SET_PARAM command the method will return parameter ID. |
-| commandId | Camera command ID according to [**CameraCommand enum**](#CameraCommand-enum). After decoding COMMAND the method will return command ID. |
+| paramId   | Camera parameter ID according to [CameraParam](#cameraparam-enum) enum. After decoding SET_PARAM command the method will return parameter ID. |
+| commandId | Camera command ID according to [CameraCommand](#cameracommand-enum) enum. After decoding COMMAND the method will return command ID. |
 | value     | Camera parameter value (after decoding SET_PARAM command).   |
 
 **Returns:** **0** - in case decoding COMMAND, **1** - in case decoding SET_PARAM command or **-1** in case errors.
@@ -425,7 +394,7 @@ static int decodeCommand(uint8_t* data, int size, CameraParam& paramId, CameraCo
 
 ## decodeAndExecuteCommand method
 
-**decodeAndExecuteCommand(...)** method decodes and executes command on camera controller side. The particular implementation of the camera controller must provide thread-safe **decodeAndExecuteCommand(...)** method call. This means that the **decodeAndExecuteCommand(...)** method can be safely called from any thread. Method declaration:
+The **decodeAndExecuteCommand(...)** method decodes and executes command on camera controller side. The particular implementation of the camera controller must provide thread-safe **decodeAndExecuteCommand(...)** method call. This means that the **decodeAndExecuteCommand(...)** method can be safely called from any thread. Method declaration:
 
 ```cpp
 virtual bool decodeAndExecuteCommand(uint8_t* data, int size) = 0;
@@ -639,7 +608,7 @@ enum class CameraParam
     DETAIL,
     /// Camera settings profile. Value depends on implementation.
     PROFILE,
-    /// Connection status (read only). Shows if we have respone from camera.
+    /// Connection status (read only). Shows if we have responses from camera.
     /// Value: 0 - not connected, 2 - connected.
     IS_CONNECTED,
     /// Open status (read only):
@@ -706,7 +675,7 @@ enum class CameraParam
 | ROI_Y1                         | read / write | ROI bottom-right vertical position, pixels.                  |
 | TEMPERATURE                    | read only    | Camera temperature, degree.                                  |
 | ALC_GATE                       | read / write | ALC gate. Value depends on implementation.                   |
-| SENSETIVITY                    | read / write | Sensor sensitivity. Value depends on implementation.         |
+| SENSITIVITY                    | read / write | Sensor sensitivity. Value depends on implementation.         |
 | CHANGING_MODE                  | read / write | Changing mode (day / night). Value depends on implementation. |
 | CHANGING_LEVEL                 | read / write | Changing level (day / night). Value depends on implementation. |
 | CHROMA_LEVEL                   | read / write | Chroma level. Values: 0 - 100%.                              |
@@ -723,11 +692,11 @@ enum class CameraParam
 
 # CameraParams class description
 
-**CameraParams** class used for camera controller initialization (**initCamera(...)** method) or to get all actual params (**getParams()** method). Also **CameraParams** provide structure to write/read params from JSON files (**JSON_READABLE** macro) and provide methos to encode and decode params.
+**CameraParams** class used for camera controller initialization ([initCamera(...)](#initcamera-method) method) or to get all actual params ([getParams(...)](#getparams-method) method). Also **CameraParams** provide structure to write/read params from JSON files (**JSON_READABLE** macro) and provide methods to encode and decode params.
 
 
 
-## Class declaration
+## CameraParams class declaration
 
 **CameraParams** interface class declared in **Camera.h** file. Class declaration:
 
@@ -768,9 +737,9 @@ public:
     int wideDynamicRangeMode{0};
     /// Image stabilization mode. Value depends on implementation but it is
     /// recommended to keep default values: 0 - Off, 1 - On.
-    int stabilisationMode{0};
+    int stabilizationMode{0};
     /// ISO sensitivity. Value depends on implementation.
-    int isoSensetivity{0};
+    int isoSensitivity{0};
     /// Scene mode. Value depends on implementation.
     int sceneMode{0};
     /// FPS.
@@ -869,7 +838,7 @@ public:
     int detail{0};
     /// Camera settings profile. Value depends on implementation.
     int profile{0};
-    /// Connection status (read only). Shows if we have respons from camera.
+    /// Connection status (read only). Shows if we have response from camera.
     /// Value: false - not connected, true - connected.
     bool isConnected{false};
     /// Open status (read only):
@@ -887,26 +856,26 @@ public:
     JSON_READABLE(CameraParams, initString, width, height, displayMode,
                   videoOutput, logMode, exposureMode, exposureTime,
                   whiteBalanceMode, whiteBalanceArea, wideDynamicRangeMode,
-                  stabilisationMode, isoSensetivity, sceneMode, fps,
+                  stabilizationMode, isoSensitivity, sceneMode, fps,
                   brightnessMode, brightness, contrast, gainMode, gain,
                   sharpeningMode, sharpening, palette, agcMode, shutterMode,
                   shutterPos, shutterSpeed, digitalZoomMode, digitalZoom,
                   exposureCompensationMode, exposureCompensationPosition,
                   defogMode, dehazeMode, noiseReductionMode,
                   blackAndWhiteFilterMode, filterMode, nucMode,
-                  autoNucIntervalMsec, imageFlip, ddeMode, ddeLevel,
-                  roiX0, roiY0, roiX1, roiY1, alcGate, sensitivity,
-                  changingMode, changingLevel, chromaLevel, detail,
-                  profile, type, custom1, custom2, custom3)
+                  autoNucIntervalMsec, imageFlip, ddeMode, ddeLevel, roiX0,
+                  roiY0, roiX1, roiY1, alcGate, sensitivity, changingMode,
+                  changingLevel, chromaLevel, detail, profile, type, custom1,
+                  custom2, custom3)
 
     /// operator =
     CameraParams& operator= (const CameraParams& src);
 
-    /// Encode params. The method doesn't encode initString.
+    /// Encode params.
     bool encode(uint8_t* data, int bufferSize, int& size,
                 CameraParamsMask* mask = nullptr);
 
-    /// Decode params. The method doesn't decode initString.
+    /// Decode params.
     bool decode(uint8_t* data, int dataSize);
 };
 ```
@@ -927,7 +896,7 @@ public:
 | whiteBalanceArea             | int    | White balance area. Value depends on implementation.         |
 | wideDynamicRangeMode         | int    | White dynamic range mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
 | stabilisationMode            | int    | Image stabilization mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
-| isoSensetivity               | int    | ISO sensitivity. Value depends on implementation.            |
+| isoSensitivity               | int    | ISO sensitivity. Value depends on implementation.            |
 | sceneMode                    | int    | Scene mode. Value depends on implementation.                 |
 | fps                          | float  | FPS.                                                         |
 | brightnessMode               | int    | Brightness mode. Value depends on implementation but it is recommended to keep default values: 0 - Manual, 1 - Auto. |
@@ -981,7 +950,7 @@ public:
 
 ## Serialize camera params
 
-[**CameraParams class**](#CameraParams-class-description) provides method **encode(...)** to serialize camera params (fields of [**CameraParams class**](#CameraParams-class-description), see Table 4). Serialization of camera params necessary in case when you have to send camera params via communication channels. Method doesn't encode **initString** field. Method provides options to exclude particular parameters from serialization. To do this method inserts binary mask (8 bytes) where each bit represents particular parameter and **decode(...)** method recognizes it. Method declaration:
+[CameraParams](#cameraparams-class-description) class provides method **encode(...)** to serialize camera params (fields of [CameraParams](#cameraparams-class-description) class, see Table 4). Serialization of camera params necessary in case when you have to send camera params via communication channels. Method doesn't encode **initString** field. Method provides options to exclude particular parameters from serialization. To do this method inserts binary mask (8 bytes) where each bit represents particular parameter and **decode(...)** method recognizes it. Method declaration:
 
 ```cpp
 bool encode(uint8_t* data, int bufferSize, int& size, CameraParamsMask* mask = nullptr);
@@ -992,7 +961,7 @@ bool encode(uint8_t* data, int bufferSize, int& size, CameraParamsMask* mask = n
 | data       | Pointer to data buffer. Buffer size must be >= 237 bytes.    |
 | bufferSize | Data buffer size. Buffer size must be >= 237 bytes.          |
 | size       | Size of encoded data.                                        |
-| mask       | Parameters mask - pointer to **CameraParamsMask** structure. **CameraParamsMask** (declared in Camera.h file) determines flags for each field (parameter) declared in [**CameraParams class**](#CameraParams-class-description). If the user wants to exclude any parameters from serialization, he can put a pointer to the mask. If the user wants to exclude a particular parameter from serialization, he should set the corresponding flag in the **CameraParamsMask** structure. |
+| mask       | Parameters mask - pointer to **CameraParamsMask** structure. **CameraParamsMask** (declared in Camera.h file) determines flags for each field (parameter) declared in [CameraParams](#cameraparams-class-description) class. If the user wants to exclude any parameters from serialization, he can put a pointer to the mask. If the user wants to exclude a particular parameter from serialization, he should set the corresponding flag in the **CameraParamsMask** structure. |
 
 **Returns:** TRUE if params encoded (serialized) or FALSE if not.
 
@@ -1011,8 +980,8 @@ typedef struct CameraParamsMask
     bool whiteBalanceMode{true};
     bool whiteBalanceArea{true};
     bool wideDynamicRangeMode{true};
-    bool stabilisationMode{true};
-    bool isoSensetivity{true};
+    bool stabilizationMode{true};
+    bool isoSensitivity{true};
     bool sceneMode{true};
     bool fps{true};
     bool brightnessMode{true};
@@ -1096,7 +1065,7 @@ cout << "Encoded data size: " << size << " bytes" << endl;
 
 ## Deserialize camera params
 
-[**CameraParams class**](#CameraParams-class-description) provides method **decode(...)** to deserialize camera params (fields of CameraParams class, see Table 4). Deserialization of camera params necessary in case when you need to receive params via communication channels. Method automatically recognizes which parameters were serialized by **encode(...)** method. Method doesn't decode **initString** field. Method declaration:
+[CameraParams](#cameraparams-class-description) class provides method **decode(...)** to deserialize camera params (fields of [CameraParams](#cameraparams-class-description) class, see Table 4). Deserialization of camera params necessary in case when you need to receive params via communication channels. Method automatically recognizes which parameters were serialized by **encode(...)** method. Method doesn't decode **initString** field. Method declaration:
 
 ```cpp
 bool decode(uint8_t* data, int dataSize);
@@ -1129,7 +1098,7 @@ if (!out.decode(data, size))
 
 ## Read params from JSON file and write to JSON file
 
-**Camera** library depends on [**ConfigReader**](https://github.com/ConstantRobotics-Ltd/ConfigReader) library which provides method to read params from JSON file and to write params to JSON file. Example of writing and reading params to JSON file:
+**Camera** library depends on [ConfigReader](https://github.com/ConstantRobotics-Ltd/ConfigReader) library which provides methods to read params from JSON file and to write params to JSON file. Example of writing and reading params to JSON file:
 
 ```cpp
 // Write params to file.
@@ -1183,7 +1152,7 @@ if(!outConfig.readFromFile("TestCameraParams.json"))
         "height": 219,
         "imageFlip": 211,
         "initString": "dfhglsjirhuhjfb",
-        "isoSensetivity": 32,
+        "isoSensitivity": 32,
         "logMode": 252,
         "noiseReductionMode": 79,
         "nucMode": 228,
@@ -1200,7 +1169,7 @@ if(!outConfig.readFromFile("TestCameraParams.json"))
         "shutterMode": 101,
         "shutterPos": 157,
         "shutterSpeed": 117,
-        "stabilisationMode": 170,
+        "stabilizationMode": 170,
         "type": 55,
         "videoOutput": 18,
         "whiteBalanceArea": 236,
@@ -1240,7 +1209,7 @@ src
 You can add repository **Camera** as submodule by commands:
 
 ```bash
-cd <your respository folder>
+cd <your repository folder>
 git submodule add https://github.com/ConstantRobotics-Ltd/Camera.git 3rdparty/Camera
 git submodule update --init --recursive
 ```
@@ -1328,7 +1297,7 @@ Done!
 
 # How to make custom implementation
 
-The **Camera** class provides only an interface, data structures, and methods for encoding and decoding commands and params. To create your own implementation of the camera controller, you must include the Camera repository in your project (see [**Build and connect to your project**](#Build-and-connect-to-your-project) section). The catalogue **example** (see [**Library files**](#Library-files) section) includes an example of the design of the custom camera controller. You must implement all the methods of the Camera interface class. Custom camera class declaration:
+The **Camera** class provides only an interface, data structures, and methods for encoding and decoding commands and params. To create your own implementation of the camera controller, you must include the Camera repository in your project (see [Build and connect to your project](#build-and-connect-to-your-project) section). The catalogue **example** (see [Library files](#library-files) section) includes an example of the design of the custom camera controller. You must implement all the methods of the Camera interface class. Custom camera class declaration:
 
 ```cpp
 class CustomCamera: public Camera
@@ -1359,7 +1328,7 @@ public:
     /// Get camera open status.
     bool isCameraConnected();
 
-    /// Set the camers controller param.
+    /// Set the camera controller param.
     bool setParam(CameraParam id, float value);
 
     /// Get the camera controller param.

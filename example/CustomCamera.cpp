@@ -143,13 +143,13 @@ bool cr::camera::CustomCamera::setParam(CameraParam id, float value)
     case CameraParam::STABILIZATION_MODE:
     {
         // Save value.
-        m_params.stabilisationMode = (int)value;
+        m_params.stabilizationMode = (int)value;
         return true;
     }
     case CameraParam::ISO_SENSITIVITY:
     {
         // Save value.
-        m_params.isoSensetivity = (int)value;
+        m_params.isoSensitivity = (int)value;
         return true;
     }
     case CameraParam::SCENE_MODE:
@@ -483,11 +483,11 @@ float cr::camera::CustomCamera::getParam(CameraParam id)
     }
     case CameraParam::STABILIZATION_MODE:
     {
-        return (float)m_params.stabilisationMode;
+        return (float)m_params.stabilizationMode;
     }
     case CameraParam::ISO_SENSITIVITY:
     {
-        return (float)m_params.isoSensetivity;
+        return (float)m_params.isoSensitivity;
     }
     case CameraParam::SCENE_MODE:
     {
