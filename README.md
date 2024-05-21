@@ -1,10 +1,10 @@
-![camera_web_logo](_static/camera_web_logo.png)
+![camera_web_logo](./static/camera_web_logo.png)
 
 
 
 # **Camera interface C++ library**
 
-**v2.5.1**
+**v2.5.2**
 
 
 
@@ -44,7 +44,7 @@
 
 # Overview
 
-**Camera** C++ library provides standard interface as well defines data structures and rules for different camera controllers. **Camera** interface class doesn't do anything, just provides interface and provides methods to encode/decode commands and encode/decode params. Different camera controller classes inherit interface form **Camera** C++ class. **Camera.h** file contains list of data structures ([CameraCommand](#cameracommand-enum) enum, [CameraParam](#cameraparam-enum) enum and [CameraParams](#cameraparams-class-description) class) and **Camera** class declaration. [CameraCommand](#cameracommand-enum) enum contains IDs of commands supported by **Camera** class. [CameraParam](#cameraparam-enum) enum contains IDs of params supported by **Camera** class. All camera controllers should include params and commands listed in **Camera.h** file. Camera interface class depends on [ConfigReader](https://github.com/ConstantRobotics-Ltd/ConfigReader) library (provides methods to read/write JSON config files, source code included, Apache 2.0 license). It uses C++17 standard. The library is licensed under the **Apache 2.0** license.
+**Camera** C++ library provides standard interface as well defines data structures and rules for different camera controllers. **Camera** interface class doesn't do anything, just provides interface and provides methods to encode / decode commands and encode / decode params. Different camera controller classes inherit interface form **Camera** C++ class. **Camera.h** file contains list of data structures ([CameraCommand](#cameracommand-enum) enum, [CameraParam](#cameraparam-enum) enum and [CameraParams](#cameraparams-class-description) class) and **Camera** class declaration. [CameraCommand](#cameracommand-enum) enum contains IDs of commands supported by **Camera** class. [CameraParam](#cameraparam-enum) enum contains IDs of params supported by **Camera** class. All camera controllers should include params and commands listed in **Camera.h** file. Camera interface class depends on [ConfigReader](https://rapidpixel.constantrobotics.com/docs/service-libraries/config-reader.html) library (provides methods to read / write JSON config files, source code included, Apache 2.0 license). It uses C++17 standard. The library is licensed under the **Apache 2.0** license.
 
 
 
@@ -65,6 +65,7 @@
 | 2.4.0   | 13.12.2023   | - Virtual destructor added.                                  |
 | 2.5.0   | 08.01.2024   | - Name of parameters updated.                                |
 | 2.5.1   | 25.03.2024   | - ConfigReader class updated. <br />- Documentation updated. |
+| 2.5.2   | 21.05.2024   | - ConfigReader class updated. <br />- Documentation updated. |
 
 
 
@@ -73,25 +74,25 @@
 The library supplied by source code only. The user would be given a set of files in the form of a CMake project (repository). The repository structure is shown below:
 
 ```xml
-CMakeLists.txt ----------------- Main CMake file of the library.
-3rdparty ----------------------- Folder with third-party libraries.
-    CMakeLists.txt ------------- CMake file which includes third-party libraries.
-    ConfigReader --------------- Source code of the ConfigReader library.
-example ------------------------ Folder with custom camera controller example.
-    CMakeLists.txt ------------- CMake file for example.
-    CustomCamera.cpp ----------- C++ implementation file.
-    CustomCamera.h ------------- Header with class declaration.
-    CustomCameraVersion.h ------ Header file which include class version.
-    CustomCameraVersion.h.in --- CMake service file to generate version file.
-test --------------------------- Folder with test application.
-    CMakeLists.txt ------------- CMake file for test application.
-    main.cpp ------------------- Source code file of test application.
-src ---------------------------- Folder with source code of the library.
-    CMakeLists.txt ------------- CMake file of the library.
-    Camera.cpp ----------------- Source code file of the library.
-    Camera.h ------------------- Header file which includes Camera class declaration.
-    CameraVersion.h ------------ Header file which includes version of the library.
-    CameraVersion.h.in --------- CMake service file to generate version file.
+CMakeLists.txt ---------------- Main CMake file of the library.
+3rdparty ---------------------- Folder with third-party libraries.
+    CMakeLists.txt ------------ CMake file to include third-party libraries.
+    ConfigReader -------------- Folder with ConfigReader library source code.
+example ----------------------- Folder with custom camera controller example.
+    CMakeLists.txt ------------ CMake file of example.
+    CustomCamera.cpp ---------- C++ implementation file.
+    CustomCamera.h ------------ Header with class declaration.
+    CustomCameraVersion.h ----- Header file which include class version.
+    CustomCameraVersion.h.in -- CMake service file to generate version file.
+test -------------------------- Folder with test application.
+    CMakeLists.txt ------------ CMake file for test application.
+    main.cpp ------------------ Source code file of test application.
+src --------------------------- Folder with source code of the library.
+    CMakeLists.txt ------------ CMake file of the library.
+    Camera.cpp ---------------- C++ implementation file.
+    Camera.h ------------------ Header file which includes Camera class declaration.
+    CameraVersion.h ----------- Header file which includes version of the library.
+    CameraVersion.h.in -------- CMake service file to generate version header.
 ```
 
 
@@ -181,7 +182,7 @@ cout << "Camera class version: " << Camera::getVersion() << endl;
 Console output:
 
 ```bash
-Camera class version: 2.5.1
+Camera class version: 2.5.2
 ```
 
 
@@ -309,7 +310,7 @@ virtual bool executeCommand(CameraCommand id) = 0;
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
-| id        | Camera controller command ID according to [**CameraCommand enum**](#CameraCommand-enum). |
+| id        | Camera controller command ID according to [CameraCommand](#CameraCommand-enum) enum. |
 
 **Returns:** TRUE if the command was executed or FALSE if not.
 
@@ -880,7 +881,7 @@ public:
 };
 ```
 
-**Table 4** - CameraParams class fields description is equivalent to [**CameraParam enum**](#CameraParam-enum) description.
+**Table 4** - CameraParams class fields description is equivalent to [CameraParam](#cameraparam-enum) enum description.
 
 | Field                        | type   | Description                                                  |
 | ---------------------------- | ------ | ------------------------------------------------------------ |
@@ -1098,7 +1099,7 @@ if (!out.decode(data, size))
 
 ## Read params from JSON file and write to JSON file
 
-**Camera** library depends on [ConfigReader](https://github.com/ConstantRobotics-Ltd/ConfigReader) library which provides methods to read params from JSON file and to write params to JSON file. Example of writing and reading params to JSON file:
+**Camera** library depends on [ConfigReader](https://rapidpixel.constantrobotics.com/docs/service-libraries/config-reader.html) library which provides methods to read params from JSON file and to write params to JSON file. Example of writing and reading params to JSON file:
 
 ```cpp
 // Write params to file.
