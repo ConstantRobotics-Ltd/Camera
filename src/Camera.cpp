@@ -102,89 +102,10 @@ bool cr::camera::CameraParams::encode(
     data[pos] = CAMERA_MAJOR_VERSION; pos += 1;
     data[pos] = CAMERA_MINOR_VERSION; pos += 1;
 
+    // Default parameters mask.
+    CameraParamsMask defaultMask;
     if (mask == nullptr)
-    {
-        // Prepare mask.
-        data[pos] = 0xFF; pos += 1;
-        data[pos] = 0xFF; pos += 1;
-        data[pos] = 0xFF; pos += 1;
-        data[pos] = 0xFF; pos += 1;
-        data[pos] = 0xFF; pos += 1;
-        data[pos] = 0xFF; pos += 1;
-        data[pos] = 0xFF; pos += 1;
-        data[pos] = 0xFF; pos += 1;
-
-        // Encode data.
-        memcpy(&data[pos], &width, 4); pos += 4;
-        memcpy(&data[pos], &height, 4); pos += 4;
-        memcpy(&data[pos], &displayMode, 4); pos += 4;
-        memcpy(&data[pos], &videoOutput, 4); pos += 4;
-        memcpy(&data[pos], &logMode, 4); pos += 4;
-        memcpy(&data[pos], &exposureMode, 4); pos += 4;
-        memcpy(&data[pos], &exposureTime, 4); pos += 4;
-        memcpy(&data[pos], &whiteBalanceMode, 4); pos += 4;
-
-        memcpy(&data[pos], &whiteBalanceArea, 4); pos += 4;
-        memcpy(&data[pos], &wideDynamicRangeMode, 4); pos += 4;
-        memcpy(&data[pos], &stabilizationMode, 4); pos += 4;
-        memcpy(&data[pos], &isoSensitivity, 4); pos += 4;
-        memcpy(&data[pos], &sceneMode, 4); pos += 4;
-        memcpy(&data[pos], &fps, 4); pos += 4;
-        memcpy(&data[pos], &brightnessMode, 4); pos += 4;
-        memcpy(&data[pos], &brightness, 4); pos += 4;
-
-        memcpy(&data[pos], &contrast, 4); pos += 4;
-        memcpy(&data[pos], &gainMode, 4); pos += 4;
-        memcpy(&data[pos], &gain, 4); pos += 4;
-        memcpy(&data[pos], &sharpeningMode, 4); pos += 4;
-        memcpy(&data[pos], &sharpening, 4); pos += 4;
-        memcpy(&data[pos], &palette, 4); pos += 4;
-        memcpy(&data[pos], &agcMode, 4); pos += 4;
-        memcpy(&data[pos], &shutterMode, 4); pos += 4;
-
-        memcpy(&data[pos], &shutterPos, 4); pos += 4;
-        memcpy(&data[pos], &shutterSpeed, 4); pos += 4;
-        memcpy(&data[pos], &digitalZoomMode, 4); pos += 4;
-        memcpy(&data[pos], &digitalZoom, 4); pos += 4;
-        memcpy(&data[pos], &exposureCompensationMode, 4); pos += 4;
-        memcpy(&data[pos], &exposureCompensationPosition, 4); pos += 4;
-        memcpy(&data[pos], &defogMode, 4); pos += 4;
-        memcpy(&data[pos], &dehazeMode, 4); pos += 4;
-
-        memcpy(&data[pos], &noiseReductionMode, 4); pos += 4;
-        memcpy(&data[pos], &blackAndWhiteFilterMode, 4); pos += 4;
-        memcpy(&data[pos], &filterMode, 4); pos += 4;
-        memcpy(&data[pos], &nucMode, 4); pos += 4;
-        memcpy(&data[pos], &autoNucIntervalMsec, 4); pos += 4;
-        memcpy(&data[pos], &imageFlip, 4); pos += 4;
-        memcpy(&data[pos], &ddeMode, 4); pos += 4;
-        memcpy(&data[pos], &ddeLevel, 4); pos += 4;
-
-        memcpy(&data[pos], &roiX0, 4); pos += 4;
-        memcpy(&data[pos], &roiY0, 4); pos += 4;
-        memcpy(&data[pos], &roiX1, 4); pos += 4;
-        memcpy(&data[pos], &roiY1, 4); pos += 4;
-        memcpy(&data[pos], &temperature, 4); pos += 4;
-        memcpy(&data[pos], &alcGate, 4); pos += 4;
-        memcpy(&data[pos], &sensitivity, 4); pos += 4;
-        memcpy(&data[pos], &changingMode, 4); pos += 4;
-
-        memcpy(&data[pos], &changingLevel, 4); pos += 4;
-        memcpy(&data[pos], &chromaLevel, 4); pos += 4;
-        memcpy(&data[pos], &detail, 4); pos += 4;
-        memcpy(&data[pos], &profile, 4); pos += 4;
-        data[pos] = isConnected == true ? 0x01 : 0x00; pos += 1;
-        data[pos] = isOpen == true ? 0x01 : 0x00; pos += 1;
-        memcpy(&data[pos], &type, 4); pos += 4;
-        memcpy(&data[pos], &custom1, 4); pos += 4;
-
-        memcpy(&data[pos], &custom2, 4); pos += 4;
-        memcpy(&data[pos], &custom3, 4); pos += 4;
-
-        size = pos;
-
-        return true;
-    }
+        mask = &defaultMask;
 
     // Prepare mask.
     data[pos] = 0;

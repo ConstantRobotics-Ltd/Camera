@@ -37,7 +37,7 @@ public:
      * @param initString Init string.
      * @return TRUE if the camera controller is init or FALSE.
      */
-    bool openCamera(std::string initString);
+    bool openCamera(std::string initString) override;
 
     /**
      * @brief Init camera controller by structure. Can be used instead
@@ -45,24 +45,24 @@ public:
      * @param initString Init string. Format depends on camera controller.
      * @return TRUE if the camera controller init or FALSE if not.
      */
-    bool initCamera(CameraParams& params);
+    bool initCamera(CameraParams& params) override;
 
     /**
      * @brief Close camera connection.
      */
-    void closeCamera();
+    void closeCamera() override;
 
     /**
      * @brief Get camera open status.
      * @return TRUE if the camera is open or FALSE.
      */
-    bool isCameraOpen();
+    bool isCameraOpen() override;
 
     /**
      * @brief Get camera open status.
      * @return TRUE if the camera is open or FALSE.
      */
-    bool isCameraConnected();
+    bool isCameraConnected() override;
 
     /**
      * @brief Set the camera controller param.
@@ -70,27 +70,27 @@ public:
      * @param value Param value.
      * @return TRUE if the property set or FALSE.
      */
-    bool setParam(CameraParam id, float value);
+    bool setParam(CameraParam id, float value) override;
 
     /**
      * @brief Get the camera controller param.
      * @param id Param ID.
      * @return int Param value or -1 of the param not exists.
      */
-    float getParam(CameraParam id);
+    float getParam(CameraParam id) override;
 
     /**
      * @brief Get the camera controller params.
      * @param params reference to CameraParams object.
      */
-    void getParams(CameraParams& params);
+    void getParams(CameraParams& params) override;
 
     /**
      * @brief Execute camera controller command.
      * @param id Command ID.
      * @return TRUE if the command executed or FALSE.
      */
-    bool executeCommand(CameraCommand id);
+    bool executeCommand(CameraCommand id) override;
 
     /**
      * @brief Decode and execute command.
@@ -98,7 +98,7 @@ public:
      * @param size Size of data.
      * @return 0 - command decoded, 1 - set param command decoded, -1 - error.
      */
-    bool decodeAndExecuteCommand(uint8_t* data, int size);
+    bool decodeAndExecuteCommand(uint8_t* data, int size) override;
 
 private:
 

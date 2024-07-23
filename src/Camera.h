@@ -475,7 +475,7 @@ public:
 
     /**
      * @brief Get Camera class version.
-     * @return String of current class version.
+     * @return String of current class version "Major.Minor.Patch".
      */
     static std::string getVersion();
 
@@ -487,10 +487,10 @@ public:
     virtual bool openCamera(std::string initString) = 0;
 
     /**
-     * @brief Init camera controller by structure. Can be used instead
+     * @brief Init camera controller by set of parameters. Can be used instead
      * openCamera(...) method.
      * @param initString Init string. Format depends on camera controller.
-     * @return TRUE if the camera controller init or FALSE if not.
+     * @return TRUE if the camera controller is init or FALSE if not.
      */
     virtual bool initCamera(CameraParams& params) = 0;
 
@@ -512,7 +512,7 @@ public:
     virtual bool isCameraConnected() = 0;
 
     /**
-     * @brief Set the camera controller param.
+     * @brief Set the camera controller parameter.
      * @param id Param ID.
      * @param value Param value.
      * @return TRUE if the property set or FALSE.
@@ -520,20 +520,20 @@ public:
     virtual bool setParam(CameraParam id, float value) = 0;
 
     /**
-     * @brief Get the camera controller param.
-     * @param id Param ID.
+     * @brief Get the camera controller parameter.
+     * @param id Parameter ID.
      * @return int Param value or -1 of the param not exists.
      */
     virtual float getParam(CameraParam id) = 0;
 
     /**
-     * @brief Get the camera controller params.
+     * @brief Get all camera controller parameters.
      * @param params reference to CameraParams object.
      */
     virtual void getParams(CameraParams& params) = 0;
 
     /**
-     * @brief Execute camera controller command.
+     * @brief Execute camera controller action command.
      * @param id Command ID.
      * @return TRUE if the command executed or FALSE.
      */
@@ -542,7 +542,7 @@ public:
     /**
      * @brief Encode set param command.
      * @param data Pointer to data buffer. Must have size >= 11.
-     * @param size Size of encoded data.
+     * @param size Size of encoded command. Will be 11 bytes.
      * @param id Camera parameter id.
      * @param value Camera parameter value.
      */
@@ -552,7 +552,7 @@ public:
     /**
      * @brief Encode command.
      * @param data Pointer to data buffer. Must have size >= 7.
-     * @param size Size of encoded data.
+     * @param size Size of encoded data. Will be 7 bytes.
      * @param id Camera command ID.
      */
     static void encodeCommand(
@@ -561,7 +561,8 @@ public:
     /**
      * @brief Decode command.
      * @param data Pointer to command data.
-     * @param size Size of data.
+     * @param size Size of data. Must be 7 bytes for action command and 11 bytes
+     * for set param command.
      * @param paramId Output command ID.
      * @param commandId Output command ID.
      * @param value Param or command value.

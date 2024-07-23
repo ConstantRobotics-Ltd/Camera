@@ -4,7 +4,7 @@
 
 # **Camera interface C++ library**
 
-**v2.5.2**
+**v2.5.3**
 
 
 
@@ -44,7 +44,7 @@
 
 # Overview
 
-**Camera** C++ library provides standard interface as well defines data structures and rules for different camera controllers. **Camera** interface class doesn't do anything, just provides interface and provides methods to encode / decode commands and encode / decode params. Different camera controller classes inherit interface form **Camera** C++ class. **Camera.h** file contains list of data structures ([CameraCommand](#cameracommand-enum) enum, [CameraParam](#cameraparam-enum) enum and [CameraParams](#cameraparams-class-description) class) and **Camera** class declaration. [CameraCommand](#cameracommand-enum) enum contains IDs of commands supported by **Camera** class. [CameraParam](#cameraparam-enum) enum contains IDs of params supported by **Camera** class. All camera controllers should include params and commands listed in **Camera.h** file. Camera interface class depends on [ConfigReader](https://rapidpixel.constantrobotics.com/docs/service-libraries/config-reader.html) library (provides methods to read / write JSON config files, source code included, Apache 2.0 license). It uses C++17 standard. The library is licensed under the **Apache 2.0** license.
+**Camera** C++ library provides standard interface as well defines data structures and rules for different camera controllers. **Camera** interface class does nothing, just provides interface and provides methods to encode / decode commands and encode / decode params. Different camera controller classes inherit interface form **Camera** C++ class. **Camera.h** file contains list of data structures ([CameraCommand](#cameracommand-enum) enum, [CameraParam](#cameraparam-enum) enum and [CameraParams](#cameraparams-class-description) class) and **Camera** class declaration. [CameraCommand](#cameracommand-enum) enum contains IDs of action commands supported by **Camera** class. [CameraParam](#cameraparam-enum) enum contains IDs of params supported by **Camera** class. All camera controllers should include params and commands listed in **Camera.h** file. Camera interface class only depends on [ConfigReader](https://rapidpixel.constantrobotics.com/docs/service-libraries/config-reader.html) library (provides methods to read / write JSON config files, source code included, Apache 2.0 license). It uses C++17 standard. The library is licensed under the **Apache 2.0** license.
 
 
 
@@ -66,6 +66,7 @@
 | 2.5.0   | 08.01.2024   | - Name of parameters updated.                                |
 | 2.5.1   | 25.03.2024   | - ConfigReader class updated. <br />- Documentation updated. |
 | 2.5.2   | 21.05.2024   | - ConfigReader class updated. <br />- Documentation updated. |
+| 2.5.3   | 23.05.2024   | - CMake updated.                                             |
 
 
 
@@ -106,6 +107,11 @@ src --------------------------- Folder with source code of the library.
 **Camera** interface class declared in **Camera.h** file. Class declaration:
 
 ```cpp
+namespace cr
+{
+namespace camera
+{
+/// Camera controller interface class.
 class Camera
 {
 public:
@@ -115,52 +121,54 @@ public:
 
     /// Get Camera class version.
     static std::string getVersion();
-    
+
     /// Open camera controller.
     virtual bool openCamera(std::string initString) = 0;
-    
-    /// Init camera controller by structure.
+
+    /// Init camera controller by set of parameters.
     virtual bool initCamera(CameraParams& params) = 0;
-    
+
     /// Close camera connection.
     virtual void closeCamera() = 0;
-    
+
     /// Get camera open status.
     virtual bool isCameraOpen() = 0;
-    
+
     /// Get camera open status.
     virtual bool isCameraConnected() = 0;
-    
-    /// Set the camera controller param.
+
+    /// Set the camera controller parameter.
     virtual bool setParam(CameraParam id, float value) = 0;
-    
-    /// Get the camera controller param.
+
+    /// Get the camera controller parameter.
     virtual float getParam(CameraParam id) = 0;
-    
-    /// Get the camera controller params structure.
+
+    /// Get all camera controller parameters.
     virtual void getParams(CameraParams& params) = 0;
-    
-    /// Execute camera controller command.
+
+    /// Execute camera controller action command.
     virtual bool executeCommand(CameraCommand id) = 0;
-    
+
     /// Encode set param command.
     static void encodeSetParamCommand(
             uint8_t* data, int& size, CameraParam id, float value);
-    
+
     /// Encode command.
     static void encodeCommand(
             uint8_t* data, int& size, CameraCommand id);
-    
+
     /// Decode command.
     static int decodeCommand(uint8_t* data,
                              int size,
                              CameraParam& paramId,
                              CameraCommand& commandId,
                              float& value);
-    
+
     /// Decode and execute command.
     virtual bool decodeAndExecuteCommand(uint8_t* data, int size) = 0;
 };
+}
+}
 ```
 
 
@@ -176,20 +184,20 @@ static std::string getVersion();
 Method can be used without **Camera** class instance:
 
 ```cpp
-cout << "Camera class version: " << Camera::getVersion() << endl;
+cout << "Camera class v: " << Camera::getVersion() << endl;
 ```
 
 Console output:
 
 ```bash
-Camera class version: 2.5.2
+Camera class v: 2.5.3
 ```
 
 
 
 ## openCamera method
 
-The **openCamera(...)** method initializes camera controller. This method can be used instead of [initCamera(...)](#initcamera-method) method. Method declaration:
+The **openCamera(...)** method initializes camera controller. All camera parameters will be initialized by default. This method can be used instead of [initCamera(...)](#initcamera-method) method. Method declaration:
 
 ```cpp
 virtual bool openCamera(std::string initString) = 0;
@@ -197,15 +205,15 @@ virtual bool openCamera(std::string initString) = 0;
 
 | Parameter  | Value                                                        |
 | ---------- | ------------------------------------------------------------ |
-| initString | Initialization string. Particular camera controller can have unique initialization string format. But it is recommended to use '**;**' symbol to divide part of initialization string. Recommended camera controller initialization string for controllers which uses serial port: **"/dev/ttyUSB0;9600;100"** ("/dev/ttyUSB0" - serial port name, "9600" - baudrate, "100" - serial port read timeout). |
+| initString | Initialization string. Particular camera controller can have unique initialization string format. But it is recommended to use '**;**' symbol to divide part of initialization string. Recommended camera controller initialization string for controllers which use serial port: **"/dev/ttyUSB0;9600;100"** ("/dev/ttyUSB0" - serial port name, "9600" - baudrate, "100" - serial port read timeout). |
 
-**Returns:** TRUE if the camera controller initialized or FALSE if not.
+**Returns:** TRUE if the camera controller is initialized or FALSE if not.
 
 
 
 ## initCamera method
 
-The **initCamera(...)** method initializes camera controller by list of parameters. This method can be used instead of [openCamera(...)](#opencamera-method) method ([CameraParams](#cameraparams-class-description) class includes **initString**) when you need initialize camera controller with not default parameters values. Method declaration:
+The **initCamera(...)** method initializes camera controller by set of parameters. This method can be used instead of [openCamera(...)](#opencamera-method) method ([CameraParams](#cameraparams-class-description) class includes **initString**) when you need initialize camera controller with not default parameters values. Method declaration:
 
 ```cpp
 virtual bool initCamera(CameraParams& params) = 0;
@@ -215,7 +223,7 @@ virtual bool initCamera(CameraParams& params) = 0;
 | --------- | ------------------------------------------------------------ |
 | params    | [CameraParams](#cameraparams-class-description) class object. CameraParams class includes initString which used in [openCamera(...)](#opencamera-method) method. |
 
-**Returns:** TRUE if the camera controller initialized or FALSE if not.
+**Returns:** TRUE if the camera controller is initialized or FALSE if not.
 
 
 
@@ -231,19 +239,19 @@ virtual void closeCamera() = 0;
 
 ## isCameraOpen method
 
-The **isCameraOpen()** method returns camera initialization status. Open status shows if the camera controller initialized but doesn't show if camera controller has communication with camera equipment. For example, if camera has serial port and camera controller connected to serial port (opens serial port file in OS) but camera may be not active (no power). In this case open status just shows that camera controller has opened serial port. Method declaration:
+The **isCameraOpen()** method returns camera initialization status. Open status shows if the camera controller is initialized but doesn't show if camera controller has communication with camera equipment. For example, if camera has serial port and camera controller connected to serial port (opens serial port file in OS) but camera may be not active (no power). In this case open status just shows that camera controller has opened serial port. Method declaration:
 
 ```cpp
 virtual bool isCameraOpen() = 0;
 ```
 
-**Returns:** TRUE if the camera controller initialized or FALSE if not.
+**Returns:** TRUE if the camera controller is initialized or FALSE if not.
 
 
 
 ## isCameraConnected method
 
-The **isCameraConnected()** method returns camera connection status. Connection status shows if the camera controller has data exchange with camera equipment. For example, if camera has serial port and camera controller connected to serial port (opens serial port file in OS) but camera may be not active (no power). In this case connection status shows that camera controller doesn't have data exchange with camera equipment (method will return FALSE). If camera controller has data exchange with camera equipment the method will return TRUE. If camera controller not initialize the connection status always FALSE. Method declaration:
+The **isCameraConnected()** method returns camera connection status. Connection status shows if the camera controller has data exchange with camera equipment. For example, if camera has serial port and camera controller connected to serial port (opens serial port file in OS) but camera may be not active (no power). In this case connection status shows that camera controller doesn't have data exchange with camera equipment (method will return FALSE). If camera controller has data exchange with camera equipment the method will return TRUE. If camera controller not initialized the connection status always FALSE. Method declaration:
 
 ```cpp
 virtual bool isCameraConnected() = 0;
@@ -263,8 +271,8 @@ virtual bool setParam(CameraParam id, float value) = 0;
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
-| id        | Camera controller parameter ID according to [CameraParam](#cameraparam-enum) enum. |
-| value     | Camera controller parameter value. Value depends on parameter ID. |
+| id        | Camera parameter ID according to [CameraParam](#cameraparam-enum) enum. |
+| value     | Camera parameter value. Value depends on parameter ID.       |
 
 **Returns:** TRUE if the parameter was set or FALSE if not.
 
@@ -302,7 +310,7 @@ virtual void getParams(CameraParams& params) = 0;
 
 ## executeCommand method
 
-The **executeCommand(...)** method executes camera controller command. The particular implementation of the camera controller must provide thread-safe **executeCommand(...)** method call. This means that the **executeCommand(...)** method can be safely called from any thread. Method declaration:
+The **executeCommand(...)** method executes camera controller action command. The particular implementation of the camera controller must provide thread-safe **executeCommand(...)** method call. This means that the **executeCommand(...)** method can be safely called from any thread. Method declaration:
 
 ```cpp
 virtual bool executeCommand(CameraCommand id) = 0;
@@ -310,15 +318,15 @@ virtual bool executeCommand(CameraCommand id) = 0;
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
-| id        | Camera controller command ID according to [CameraCommand](#CameraCommand-enum) enum. |
+| id        | Camera action command ID according to [CameraCommand](#cameracommand-enum) enum. |
 
-**Returns:** TRUE if the command was executed or FALSE if not.
+**Returns:** TRUE if the command was executed (accepted by controller) or FALSE if not.
 
 
 
 ## encodeSetParamCommand method
 
-The **encodeSetParamCommand(...)** static method encodes command to change any remote camera parameter value. To control a camera remotely, the developer has to design his own protocol and according to it encode the command and deliver it over the communication channel. To simplify this, the **Camera** class contains static methods for encoding the control command. The **Camera** class provides two types of commands: a parameter change command (SET_PARAM) and an action command (COMMAND). **encodeSetParamCommand(...)** designed to encode SET_PARAM command. Method declaration:
+The **encodeSetParamCommand(...)** static method encodes command to change any remote camera parameter. To control a camera remotely, the developer has to design his own protocol and according to it encode the command and deliver it over the communication channel. To simplify this, the **Camera** class contains static methods for encoding the control command. The **Camera** class provides two types of commands: a parameter change command (SET_PARAM) and an action command (COMMAND). **encodeSetParamCommand(...)** designed to encode SET_PARAM command. Method declaration:
 
 ```cpp
 static void encodeSetParamCommand(uint8_t* data, int& size, CameraParam id, float value);
@@ -328,7 +336,7 @@ static void encodeSetParamCommand(uint8_t* data, int& size, CameraParam id, floa
 | --------- | ------------------------------------------------------------ |
 | data      | Pointer to data buffer for encoded command. Must have size >= 11. |
 | size      | Size of encoded data. Will be 11 bytes.                      |
-| id        | Parameter ID according to [CameraCommand](#cameracommand-enum) enum. |
+| id        | Parameter ID according to [CameraParam](#cameraparam-enum) enum. |
 | value     | Parameter value.                                             |
 
 **encodeSetParamCommand(...)** is static and used without **Camera** class instance. This method used on client side (control system). Command encoding example:
@@ -348,7 +356,7 @@ Camera::encodeSetParamCommand(data, size, CameraParam::ROI_X0, outValue);
 
 ## encodeCommand method
 
-The **encodeCommand(...)** static method encodes command for camera remote control. To control a camera remotely, the developer has to design his own protocol and according to it encode the command and deliver it over the communication channel. To simplify this, the **Camera** class contains static methods for encoding the control command. The **Camera** class provides two types of commands: a parameter change command (SET_PARAM) and an action command (COMMAND). **encodeCommand(...)** designed to encode COMMAND command (action command). Method declaration:
+The **encodeCommand(...)** static method encodes action command for camera remote control. To control a camera remotely, the developer has to design his own protocol and according to it encode the command and deliver it over the communication channel. To simplify this, the **Camera** class contains static methods for encoding the control command. The **Camera** class provides two types of commands: a parameter change command (SET_PARAM) and an action command (COMMAND). **encodeCommand(...)** designed to encode COMMAND command (action command). Method declaration:
 
 ```cpp
 static void encodeCommand(uint8_t* data, int& size, CameraCommand id);
@@ -358,7 +366,7 @@ static void encodeCommand(uint8_t* data, int& size, CameraCommand id);
 | --------- | ------------------------------------------------------------ |
 | data      | Pointer to data buffer for encoded command. Must have size >= 7. |
 | size      | Size of encoded data. Will be 7 bytes.                       |
-| id        | Command ID according to [CameraParam](#cameraparam-enum) enum. |
+| id        | Command ID according to [CameraCommand](#cameracommand-enum) enum. |
 
 **encodeCommand(...)** is static and used without **Camera** class instance. This method used on client side (control system). Command encoding example:
 
@@ -408,6 +416,28 @@ virtual bool decodeAndExecuteCommand(uint8_t* data, int size) = 0;
 
 **Returns:** TRUE if command decoded (SET_PARAM or COMMAND) and executed (action command or set param command).
 
+Recommended implementation of **decodeAndExecuteCommand(...)** method:
+
+```cpp
+bool cr::camera::CustomCamera::decodeAndExecuteCommand(uint8_t* data, int size)
+{
+    // Decode command.
+    CameraCommand commandId = CameraCommand::NUC;
+    CameraParam paramId = CameraParam::NUC_MODE;
+    float value = 0.0f;
+    switch (Camera::decodeCommand(data, size, paramId, commandId, value))
+    {
+    // COMMAND.
+    case 0: return executeCommand(commandId);
+    // SET_PARAM.
+    case 1: return setParam(paramId, value);
+    default: return false;
+    }
+
+    return false;
+}
+```
+
 
 
 # Data structures
@@ -419,6 +449,10 @@ virtual bool decodeAndExecuteCommand(uint8_t* data, int size) = 0;
 Enum declaration:
 
 ```cpp
+namespace cr
+{
+namespace camera
+{
 enum class CameraCommand
 {
     /// Restart camera controller.
@@ -448,14 +482,16 @@ enum class CameraCommand
     /// Disable freeze.
     DEFREEZE
 };
+}
+}
 ```
 
-**Table 2** - Camera commands description. Some commands may be unsupported by particular camera controller.
+**Table 2** - Camera action commands description. Some commands may be unsupported by particular camera controller.
 
 | Command      | Description                                |
 | ------------ | ------------------------------------------ |
 | RESTART      | Restart camera controller.                 |
-| NUC          | Do NUC (Calibration). For thermal cameras. |
+| NUC          | Do NUC (Calibration, flat field correction). For thermal cameras. |
 | APPLY_PARAMS | Apply settings.                            |
 | SAVE_PARAMS  | Save params in camera memory.              |
 | MENU_ON      | Menu on.                                   |
@@ -475,6 +511,10 @@ enum class CameraCommand
 Enum declaration:
 
 ```cpp
+namespace cr
+{
+namespace camera
+{
 enum class CameraParam
 {
     /// Video frame width. Value from 0 to 16384.
@@ -609,7 +649,7 @@ enum class CameraParam
     DETAIL,
     /// Camera settings profile. Value depends on implementation.
     PROFILE,
-    /// Connection status (read only). Shows if we have responses from camera.
+    /// Connection status (read only). Shows if we have respone from camera.
     /// Value: 0 - not connected, 2 - connected.
     IS_CONNECTED,
     /// Open status (read only):
@@ -624,51 +664,53 @@ enum class CameraParam
     /// Camera custom param. Value depends on implementation.
     CUSTOM_3
 };
+}
+}
 ```
 
-**Table 3** - Camera params description. Some params may be unsupported by particular camera controller.
+**Table 3** - Camera parameters description. Some parameters may be unsupported by particular camera controller.
 
 | Parameter                      | Access       | Description                                                  |
 | ------------------------------ | ------------ | ------------------------------------------------------------ |
 | WIDTH                          | read / write | Video frame width. Value from 0 to 16384.                    |
 | HEIGHT                         | read / write | Video frame height Value from 0 to 16384.                    |
-| DISPLAY_MODE                   | read / write | Display menu mode. Value depends on implementation but it is recommended to keep default values: 0 - Off. 1 - On. |
+| DISPLAY_MODE                   | read / write | Display menu mode. Value depends on implementation but it is recommended to keep default values: **0** - Off. **1** - On. |
 | VIDEO_OUTPUT                   | read / write | Video output type. Value depends on implementation.          |
-| LOG_MODE                       | read / write | Logging mode. Values: 0 - Disable, 1 - Only file, 2 - Only terminal (console), 3 - File and terminal. |
-| EXPOSURE_MODE                  | read / write | Exposure mode. Value depends on implementation but it is recommended to keep default values: 0 - Manual, 1 - Auto (default), 2 - Shutter priority, 3 - Aperture priority. |
+| LOG_MODE                       | read / write | Logging mode. Values: **0** - Disable, **1** - Only file, **2** - Only terminal (console), **3** - File and terminal. |
+| EXPOSURE_MODE                  | read / write | Exposure mode. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto (default), **2** - Shutter priority, **3** - Aperture priority. |
 | EXPOSURE_TIME                  | read / write | Exposure time of the camera sensor. The exposure time is limited by the frame interval. Camera controller should interpret the values as 100 µs units, where the value 1 stands for 1/10000th of a second, 10000 for 1 second and 100000 for 10 seconds. |
-| WHITE_BALANCE_MODE             | read / write | White balance mode. Value depends on implementation but it is recommended to keep default values: 0 - Manual, 1 - Auto. |
+| WHITE_BALANCE_MODE             | read / write | White balance mode. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto. |
 | WHITE_BALANCE_AREA             | read / write | White balance area. Value depends on implementation.         |
-| WIDE_DYNAMIC_RANGE_MODE        | read / write | White dynamic range mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
-| STABILIZATION_MODE             | read / write | Image stabilization mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
+| WIDE_DYNAMIC_RANGE_MODE        | read / write | White dynamic range mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
+| STABILIZATION_MODE             | read / write | Image stabilization mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
 | ISO_SENSITIVITY                | read / write | ISO sensitivity. Value depends on implementation.            |
 | SCENE_MODE                     | read / write | Scene mode. Value depends on implementation.                 |
 | FPS                            | read / write | FPS.                                                         |
-| BRIGHTNESS_MODE                | read / write | Brightness mode. Value depends on implementation but it is recommended to keep default values: 0 - Manual, 1 - Auto. |
+| BRIGHTNESS_MODE                | read / write | Brightness mode. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto. |
 | BRIGHTNESS                     | read / write | Brightness. Value 0 - 100%.                                  |
 | CONTRAST                       | read / write | Contrast. Value 1 - 100%.                                    |
-| GAIN_MODE                      | read / write | Gain mode. Value depends on implementation but it is recommended to keep default values: 0 - Manual, 1 - Auto. |
+| GAIN_MODE                      | read / write | Gain mode. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto. |
 | GAIN                           | read / write | Gain. Value 0 - 100%.                                        |
-| SHARPENING_MODE                | read / write | Sharpening mode. Value depends on implementation but it is recommended to keep default values: 0 - Manual, 1 - Auto. |
+| SHARPENING_MODE                | read / write | Sharpening mode. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto. |
 | SHARPENING                     | read / write | Sharpening. Value 1 - 100%.                                  |
-| PALETTE                        | read / write | Palette. Value depends on implementation but it is recommended to keep default values for thermal cameras: 0 - White hot, 1 - Black hot. |
-| AGC_MODE                       | read / write | Analog gain control mode. Value depends on implementation but it is recommended to keep default values: 0 - Manual, 1 - Auto. |
-| SHUTTER_MODE                   | read / write | Shutter mode. Value depends on implementation but it is recommended to keep default values: 0 - Manual, 1 - Auto. |
+| PALETTE                        | read / write | Palette. Value depends on implementation but it is recommended to keep default values for thermal cameras: **0** - White hot, **1** - Black hot. |
+| AGC_MODE                       | read / write | Analog gain control mode. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto. |
+| SHUTTER_MODE                   | read / write | Shutter mode. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto. |
 | SHUTTER_POSITION               | read / write | Shutter position. 0 (full close) - 65535 (full open).        |
 | SHUTTER_SPEED                  | read / write | Shutter speed. Value: 0 - 100%.                              |
-| DIGITAL_ZOOM_MODE              | read / write | Digital zoom mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
+| DIGITAL_ZOOM_MODE              | read / write | Digital zoom mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
 | DIGITAL_ZOOM                   | read only    | Digital zoom. Value 1.0 (x1) - 20.0 (x20).                   |
-| EXPOSURE_COMPENSATION_MODE     | read only    | Exposure compensation mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
+| EXPOSURE_COMPENSATION_MODE     | read only    | Exposure compensation mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
 | EXPOSURE_COMPENSATION_POSITION | read / write | Exposure compensation position. Value depends on particular camera controller. |
-| DEFOG_MODE                     | read / write | Defog mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
-| DEHAZE_MODE                    |              | Dehaze mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
-| NOISE_REDUCTION_MODE           | read / write | Noise reduction mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - 2D, 3 - 3D. |
+| DEFOG_MODE                     | read / write | Defog mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
+| DEHAZE_MODE                    |              | Dehaze mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
+| NOISE_REDUCTION_MODE           | read / write | Noise reduction mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - 2D, **3** - 3D. |
 | BLACK_WHITE_FILTER_MODE        | read only    | Black and white filter mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
 | FILTER_MODE                    | read / write | Filter mode. Value depends on implementation.                |
-| NUC_MODE                       | read / write | NUC mode for thermal cameras. Value depends on implementation but it is recommended to keep default values: 0 - Manual, 1 - Auto. |
+| NUC_MODE                       | read / write | NUC mode for thermal cameras. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto. |
 | AUTO_NUC_INTERVAL              | read / write | Auto NUC interval for thermal cameras. Value in milliseconds from 0 (Off) to 100000. |
-| IMAGE_FLIP                     | read / write | Image flip mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - Horizontal, 2 - Vertical, 3 - Horizontal and vertical. |
-| DDE_MODE                       | read / write | DDE mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
+| IMAGE_FLIP                     | read / write | Image flip mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - Horizontal, **2** - Vertical, **3** - Horizontal and vertical. |
+| DDE_MODE                       | read / write | DDE mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
 | DDE_LEVEL                      | read / write | DDE level. Value depends on implementation.                  |
 | ROI_X0                         | read / write | ROI top-left horizontal position, pixels.                    |
 | ROI_Y0                         | read / write | ROI top-left vertical position, pixels.                      |
@@ -682,8 +724,8 @@ enum class CameraParam
 | CHROMA_LEVEL                   | read / write | Chroma level. Values: 0 - 100%.                              |
 | DETAIL                         | read / write | Details, enhancement. Values: 0 - 100%.                      |
 | PROFILE                        | read / write | Camera settings profile. Value depends on implementation.    |
-| IS_CONNECTED                   | read only    | Connection status. Value: 0 - no camera responses, 1 - connected. |
-| IS_OPEN                        | read only    | Open status (read only): 1 - camera control port open, 0 - not open. |
+| IS_CONNECTED                   | read only    | Connection status. Value: **0** - no camera responses, **1** - connected. |
+| IS_OPEN                        | read only    | Open status (read only): **1** - camera control port open, **0** - not open. |
 | TYPE                           | read / write | Camera type. Value depends on implementation.                |
 | CUSTOM_1                       | read / write | Camera custom param. Value depends on implementation.        |
 | CUSTOM_2                       | read / write | Camera custom param. Value depends on implementation.        |
@@ -702,6 +744,10 @@ enum class CameraParam
 **CameraParams** interface class declared in **Camera.h** file. Class declaration:
 
 ```cpp
+namespace cr
+{
+namespace camera
+{
 class CameraParams
 {
 public:
@@ -879,6 +925,8 @@ public:
     /// Decode params.
     bool decode(uint8_t* data, int dataSize);
 };
+}
+}
 ```
 
 **Table 4** - CameraParams class fields description is equivalent to [CameraParam](#cameraparam-enum) enum description.
@@ -888,43 +936,43 @@ public:
 | initString                   | string | Initialization string. Particular camera controller can have unique init string format. But it is recommended to use '**;**' symbol to divide part of initialization string. Recommended camera controller initialization string for controllers which uses serial port: **"/dev/ttyUSB0;9600;100"** ("/dev/ttyUSB0" - serial port name, "9600" - baudrate, "100" - serial port read timeout). |
 | width                        | int    | Video frame width. Value from 0 to 16384.                    |
 | height                       | int    | Video frame height Value from 0 to 16384.                    |
-| displayMode                  | int    | Display menu mode. Value depends on implementation but it is recommended to keep default values: 0 - Off. 1 - On. |
+| displayMode                  | int    | Display menu mode. Value depends on implementation but it is recommended to keep default values: **0** - Off. **1** - On. |
 | videoOutput                  | int    | Video output type. Value depends on implementation.          |
-| logMode                      | int    | Logging mode. Values: 0 - Disable, 1 - Only file, 2 - Only terminal (console), 3 - File and terminal. |
-| exposureMode                 | int    | Exposure mode. Value depends on implementation but it is recommended to keep default values: 0 - Manual, 1 - Auto (default), 2 - Shutter priority, 3 - Aperture priority. |
+| logMode                      | int    | Logging mode. Values: **0** - Disable, **1** - Only file, **2** - Only terminal (console), **3** - File and terminal. |
+| exposureMode                 | int    | Exposure mode. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto (default), **2** - Shutter priority, **3** - Aperture priority. |
 | exposureTime                 | int    | Exposure time of the camera sensor. The exposure time is limited by the frame interval. Camera controller should interpret the values as 100 µs units, where the value 1 stands for 1/10000th of a second, 10000 for 1 second and 100000 for 10 seconds. |
-| whiteBalanceMode             | int    | White balance mode. Value depends on implementation but it is recommended to keep default values: 0 - Manual, 1 - Auto. |
+| whiteBalanceMode             | int    | White balance mode. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto. |
 | whiteBalanceArea             | int    | White balance area. Value depends on implementation.         |
-| wideDynamicRangeMode         | int    | White dynamic range mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
-| stabilisationMode            | int    | Image stabilization mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
+| wideDynamicRangeMode         | int    | White dynamic range mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
+| stabilisationMode            | int    | Image stabilization mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
 | isoSensitivity               | int    | ISO sensitivity. Value depends on implementation.            |
 | sceneMode                    | int    | Scene mode. Value depends on implementation.                 |
 | fps                          | float  | FPS.                                                         |
-| brightnessMode               | int    | Brightness mode. Value depends on implementation but it is recommended to keep default values: 0 - Manual, 1 - Auto. |
+| brightnessMode               | int    | Brightness mode. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto. |
 | brightness                   | int    | Brightness. Value 0 - 100%.                                  |
 | contrast                     | int    | Contrast. Value 1 - 100%.                                    |
-| gainMode                     | int    | Gain mode. Value depends on implementation but it is recommended to keep default values: 0 - Manual, 1 - Auto. |
+| gainMode                     | int    | Gain mode. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto. |
 | gain                         | int    | Gain. Value 0 - 100%.                                        |
-| sharpeningMode               | int    | Sharpening mode. Value depends on implementation but it is recommended to keep default values: 0 - Manual, 1 - Auto. |
+| sharpeningMode               | int    | Sharpening mode. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto. |
 | sharpening                   | int    | Sharpening. Value 1 - 100%.                                  |
-| palette                      | int    | Palette. Value depends on implementation but it is recommended to keep default values for thermal cameras: 0 - White hot, 1 - Black hot. |
-| agcMode                      | int    | Analog gain control mode. Value depends on implementation but it is recommended to keep default values: 0 - Manual, 1 - Auto. |
-| shutterMode                  | int    | Shutter mode. Value depends on implementation but it is recommended to keep default values: 0 - Manual, 1 - Auto. |
+| palette                      | int    | Palette. Value depends on implementation but it is recommended to keep default values for thermal cameras: **0** - White hot, **1** - Black hot. |
+| agcMode                      | int    | Analog gain control mode. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto. |
+| shutterMode                  | int    | Shutter mode. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto. |
 | shutterPos                   | int    | Shutter position. 0 (full close) - 65535 (full open).        |
 | shutterSpeed                 | int    | Shutter speed. Value: 0 - 100%.                              |
-| digitalZoomMode              | int    | Digital zoom mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
+| digitalZoomMode              | int    | Digital zoom mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
 | digitalZoom                  | float  | Digital zoom. Value 1.0 (x1) - 20.0 (x20).                   |
-| exposureCompensationMode     | int    | Exposure compensation mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
+| exposureCompensationMode     | int    | Exposure compensation mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
 | exposureCompensationPosition | int    | Exposure compensation position. Value depends on particular camera controller. |
-| defogMode                    | int    | Defog mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
-| dehazeMode                   | int    | Dehaze mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
-| noiseReductionMode           | int    | Noise reduction mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - 2D, 3 - 3D. |
-| blackAndWhiteFilterMode      | int    | Black and white filter mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
+| defogMode                    | int    | Defog mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
+| dehazeMode                   | int    | Dehaze mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
+| noiseReductionMode           | int    | Noise reduction mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - 2D, **3** - 3D. |
+| blackAndWhiteFilterMode      | int    | Black and white filter mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
 | filterMode                   | int    | Filter mode. Value depends on implementation.                |
-| nucMode                      | int    | NUC mode for thermal cameras. Value depends on implementation but it is recommended to keep default values: 0 - Manual, 1 - Auto. |
+| nucMode                      | int    | NUC mode for thermal cameras. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto. |
 | autoNucIntervalMsec          | int    | Auto NUC interval for thermal cameras. Value in milliseconds from 0 (Off) to 100000. |
-| imageFlip                    | int    | Image flip mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - Horizontal, 2 - Vertical, 3 - Horizontal and vertical. |
-| ddeMode                      | int    | DDE mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
+| imageFlip                    | int    | Image flip mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - Horizontal, **2** - Vertical, **3** - Horizontal and vertical. |
+| ddeMode                      | int    | DDE mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
 | ddeLevel                     | float  | DDE level. Value depends on implementation.                  |
 | roiX0                        | int    | ROI top-left horizontal position, pixels.                    |
 | roiY0                        | int    | ROI top-left vertical position, pixels.                      |
@@ -1121,62 +1169,62 @@ if(!outConfig.readFromFile("TestCameraParams.json"))
 ```json
 {
     "cameraParams": {
-        "agcMode": 252,
-        "alcGate": 125,
-        "autoNucIntervalMsec": 47,
-        "blackAndWhiteFilterMode": 68,
-        "brightness": 67,
-        "brightnessMode": 206,
-        "changingLevel": 84.0,
-        "changingMode": 239,
-        "chromeLevel": 137,
-        "contrast": 65,
-        "custom1": 216.0,
-        "custom2": 32.0,
-        "custom3": 125.0,
-        "ddeLevel": 25,
-        "ddeMode": 221,
-        "defogMode": 155,
-        "dehazeMode": 239,
-        "detail": 128,
-        "digitalZoom": 47.0,
-        "digitalZoomMode": 157,
+        "agcMode": 90,
+        "alcGate": 6,
+        "autoNucIntervalMsec": 71,
+        "blackAndWhiteFilterMode": 238,
+        "brightness": 62,
+        "brightnessMode": 95,
+        "changingLevel": 240.0,
+        "changingMode": 138,
+        "chromaLevel": 83,
+        "contrast": 219,
+        "custom1": 215.0,
+        "custom2": 19.0,
+        "custom3": 135.0,
+        "ddeLevel": 13.0,
+        "ddeMode": 229,
+        "defogMode": 236,
+        "dehazeMode": 109,
+        "detail": 125,
+        "digitalZoom": 201.0,
+        "digitalZoomMode": 33,
         "displayMode": 2,
-        "exposureCompensationMode": 213,
-        "exposureCompensationPosition": 183,
-        "exposureMode": 192,
-        "exposureTime": 16,
-        "filterMode": 251,
-        "fps": 19.0,
-        "gain": 111,
-        "gainMode": 130,
-        "height": 219,
-        "imageFlip": 211,
+        "exposureCompensationMode": 138,
+        "exposureCompensationPosition": 99,
+        "exposureMode": 216,
+        "exposureTime": 167,
+        "filterMode": 188,
+        "fps": 133.0,
+        "gain": 248,
+        "gainMode": 106,
+        "height": 79,
+        "imageFlip": 100,
         "initString": "dfhglsjirhuhjfb",
-        "isoSensitivity": 32,
-        "logMode": 252,
-        "noiseReductionMode": 79,
-        "nucMode": 228,
-        "palette": 115,
-        "profile": 108,
-        "roiX0": 93,
-        "roiX1": 135,
-        "roiY0": 98,
-        "roiY1": 206,
-        "sceneMode": 195,
-        "sensitivity": 70.0,
-        "sharpening": 196,
-        "sharpeningMode": 49,
-        "shutterMode": 101,
-        "shutterPos": 157,
-        "shutterSpeed": 117,
-        "stabilizationMode": 170,
-        "type": 55,
-        "videoOutput": 18,
-        "whiteBalanceArea": 236,
-        "whiteBalanceMode": 30,
-        "wideDynamicRangeMode": 21,
-        "width": 150
+        "isoSensitivity": 26,
+        "logMode": 168,
+        "noiseReductionMode": 178,
+        "nucMode": 218,
+        "palette": 97,
+        "profile": 194,
+        "roiX0": 78,
+        "roiX1": 39,
+        "roiY0": 168,
+        "roiY1": 27,
+        "sceneMode": 77,
+        "sensitivity": 89.0,
+        "sharpening": 209,
+        "sharpeningMode": 115,
+        "shutterMode": 208,
+        "shutterPos": 83,
+        "shutterSpeed": 53,
+        "stabilizationMode": 67,
+        "type": 52,
+        "videoOutput": 206,
+        "whiteBalanceArea": 69,
+        "whiteBalanceMode": 10,
+        "wideDynamicRangeMode": 106,
+        "width": 99
     }
 }
 ```
@@ -1188,9 +1236,7 @@ if(!outConfig.readFromFile("TestCameraParams.json"))
 Typical commands to build **Camera** library:
 
 ```bash
-git clone https://github.com/ConstantRobotics-Ltd/Camera.git
 cd Camera
-git submodule update --init --recursive
 mkdir build
 cd build
 cmake ..
@@ -1215,7 +1261,7 @@ git submodule add https://github.com/ConstantRobotics-Ltd/Camera.git 3rdparty/Ca
 git submodule update --init --recursive
 ```
 
-In you repository folder will be created folder **3rdparty/Camera** which contains files of **Camera** repository with subrepository **ConfigReader** and **ConfigReader**. New structure of your repository:
+Create **3rdparty** folder in your repository folder and copy **Camera** repository folder there. New structure of your repository:
 
 ```bash
 CMakeLists.txt
@@ -1267,7 +1313,7 @@ if (${PARENT}_SUBMODULE_CAMERA)
 endif()
 ```
 
-File **3rdparty/CMakeLists.txt** adds folder **Camera** to your project and excludes test application and example (Camera class test applications and example of custom Camera class implementation) from compiling. Your repository new structure will be:
+File **3rdparty/CMakeLists.txt** adds folder **Camera** to your project and excludes test application and example (Camera class test applications and example of custom Camera class implementation) from compiling (by default test application and example excluded from compiling if **Camera** included as subrepository). Your repository new structure will be:
 
 ```bash
 CMakeLists.txt
@@ -1301,10 +1347,17 @@ Done!
 The **Camera** class provides only an interface, data structures, and methods for encoding and decoding commands and params. To create your own implementation of the camera controller, you must include the Camera repository in your project (see [Build and connect to your project](#build-and-connect-to-your-project) section). The catalogue **example** (see [Library files](#library-files) section) includes an example of the design of the custom camera controller. You must implement all the methods of the Camera interface class. Custom camera class declaration:
 
 ```cpp
+namespace cr
+{
+namespace camera
+{
+/**
+ * @brief Custom camera controller class.
+ */
 class CustomCamera: public Camera
 {
 public:
-    
+
     /// Class constructor.
     CustomCamera();
 
@@ -1315,38 +1368,40 @@ public:
     static std::string getVersion();
 
     /// Open camera controller.
-    bool openCamera(std::string initString);
+    bool openCamera(std::string initString) override;
 
-    /// Init camera controller by structure.
-    bool initCamera(CameraParams& params);
+    /// Init camera controller by set of parameters.
+    bool initCamera(CameraParams& params) override;
 
     /// Close camera connection.
-    void closeCamera();
+    void closeCamera() override;
 
     /// Get camera open status.
-    bool isCameraOpen();
+    bool isCameraOpen() override;
 
     /// Get camera open status.
-    bool isCameraConnected();
+    bool isCameraConnected() override;
 
     /// Set the camera controller param.
-    bool setParam(CameraParam id, float value);
+    bool setParam(CameraParam id, float value) override;
 
     /// Get the camera controller param.
-    float getParam(CameraParam id);
+    float getParam(CameraParam id) override;
 
     /// Get the camera controller params.
-    CameraParams getParams();
+    void getParams(CameraParams& params) override;
 
     /// Execute camera controller command.
-    bool executeCommand(CameraCommand id);
+    bool executeCommand(CameraCommand id) override;
 
     /// Decode and execute command.
-    bool decodeAndExecuteCommand(uint8_t* data, int size);
+    bool decodeAndExecuteCommand(uint8_t* data, int size) override;
 
 private:
 
     /// Parameters structure (default params).
     CameraParams m_params;
 };
+}
+}
 ```
