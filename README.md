@@ -4,7 +4,7 @@
 
 # **Camera interface C++ library**
 
-**v2.5.3**
+**v2.5.4**
 
 
 
@@ -66,7 +66,8 @@
 | 2.5.0   | 08.01.2024   | - Name of parameters updated.                                |
 | 2.5.1   | 25.03.2024   | - ConfigReader class updated. <br />- Documentation updated. |
 | 2.5.2   | 21.05.2024   | - ConfigReader class updated. <br />- Documentation updated. |
-| 2.5.3   | 23.07.2024   | - CMake updated.                                             |
+| 2.5.3   | 23.07.2024   | - CMake updated.     
+| 2.5.4   | 03.09.2024   | - Documentation updated. |
 
 
 
@@ -190,7 +191,7 @@ cout << "Camera class v: " << Camera::getVersion() << endl;
 Console output:
 
 ```bash
-Camera class v: 2.5.3
+Camera class v: 2.5.4
 ```
 
 
