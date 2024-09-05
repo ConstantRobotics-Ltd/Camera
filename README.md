@@ -1148,7 +1148,7 @@ if (!out.decode(data, size))
 
 ## Read params from JSON file and write to JSON file
 
-**Camera** library depends on [ConfigReader](https://rapidpixel.constantrobotics.com/docs/service-libraries/config-reader.html) library which provides methods to read params from JSON file and to write params to JSON file. Example of writing and reading params to JSON file:
+**Camera** library depends on [ConfigReader](https://rapidpixel.constantrobotics.com/docs/Service/ConfigReader.html) library which provides methods to read params from JSON file and to write params to JSON file. Example of writing and reading params to JSON file:
 
 ```cpp
 // Write params to file.
