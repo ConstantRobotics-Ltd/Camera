@@ -1258,7 +1258,7 @@ You can add repository **Camera** as submodule by commands:
 
 ```bash
 cd <your repository folder>
-git submodule add https://rapidpixel.constantrobotics.com/docs/Camera/Camera.html.git 3rdparty/Camera
+git submodule add https://github.com/ConstantRobotics-Ltd/Camera.git 3rdparty/Camera
 git submodule update --init --recursive
 ```
 
