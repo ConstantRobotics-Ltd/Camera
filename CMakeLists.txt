@@ -52,7 +52,13 @@ endif()
 ## Adding subdirectories according to the project configuration
 ################################################################################
 if (${PARENT}_CAMERA)
-    add_subdirectory(3rdparty)
+    # If this project is a stand alone repository, its dependency is expected
+    # to be next to it (../ConfigReader) and is added first. If this project is
+    # included in another one, the top-level CMakeLists.txt must add this
+    # library by itself.
+    if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../ConfigReader ${CMAKE_CURRENT_BINARY_DIR}/ConfigReader)
+    endif()
     add_subdirectory(src)
 endif()
 

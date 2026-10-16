@@ -4,7 +4,7 @@
 
 # **Camera interface C++ library**
 
-**v2.5.4**
+**v2.5.5**
 
 
 
@@ -38,13 +38,17 @@
   - [Deserialize camera params](#deserialize-camera-params)
   - [Read params from JSON file and write to JSON file](#read-params-from-json-file-and-write-to-json-file)
 - [Build and connect to your project](#build-and-connect-to-your-project)
+  - [Build stand alone](#build-stand-alone)
+  - [CMake options](#cmake-options)
+  - [Connect to your project](#connect-to-your-project)
 - [How to make custom implementation](#how-to-make-custom-implementation)
+- [Portability](#portability)
 
 
 
 # Overview
 
-**Camera** C++ library provides standard interface as well defines data structures and rules for different camera controllers. **Camera** interface class does nothing, just provides interface and provides methods to encode / decode commands and encode / decode params. Different camera controller classes inherit interface form **Camera** C++ class. **Camera.h** file contains list of data structures ([CameraCommand](#cameracommand-enum) enum, [CameraParam](#cameraparam-enum) enum and [CameraParams](#cameraparams-class-description) class) and **Camera** class declaration. [CameraCommand](#cameracommand-enum) enum contains IDs of action commands supported by **Camera** class. [CameraParam](#cameraparam-enum) enum contains IDs of params supported by **Camera** class. All camera controllers should include params and commands listed in **Camera.h** file. Camera interface class only depends on [ConfigReader](https://rapidpixel.constantrobotics.com/docs/Service/ConfigReader.html) library (provides methods to read / write JSON config files, source code included, Apache 2.0 license). It uses C++17 standard. The library is licensed under the **Apache 2.0** license.
+**Camera** C++ library provides standard interface as well defines data structures and rules for different camera controllers. **Camera** interface class does nothing, just provides interface and provides methods to encode / decode commands and encode / decode params. Different camera controller classes inherit interface from **Camera** C++ class. **Camera.h** file contains list of data structures ([CameraCommand](#cameracommand-enum) enum, [CameraParam](#cameraparam-enum) enum and [CameraParams](#cameraparams-class-description) class) and **Camera** class declaration. [CameraCommand](#cameracommand-enum) enum contains IDs of action commands supported by **Camera** class. [CameraParam](#cameraparam-enum) enum contains IDs of params supported by **Camera** class. All camera controllers should include params and commands listed in **Camera.h** file. Camera interface class only depends on [ConfigReader](https://rapidpixel.constantrobotics.com/docs/Service/ConfigReader.html) library (provides methods to read / write JSON config files). The repository doesn't contain the source code of **ConfigReader**: the library must be placed next to the **Camera** repository (see [Build stand alone](#build-stand-alone)). It uses C++17 standard.
 
 
 
@@ -66,8 +70,9 @@
 | 2.5.0   | 08.01.2024   | - Name of parameters updated.                                |
 | 2.5.1   | 25.03.2024   | - ConfigReader class updated. <br />- Documentation updated. |
 | 2.5.2   | 21.05.2024   | - ConfigReader class updated. <br />- Documentation updated. |
-| 2.5.3   | 23.07.2024   | - CMake updated.     
+| 2.5.3   | 23.07.2024   | - CMake updated.                                             |
 | 2.5.4   | 03.09.2024   | - Documentation updated. |
+| 2.5.5   | 16.10.2026   | - Git submodule removed: **ConfigReader** library must be placed next to the **Camera** repository.<br />- Compiler warnings, exploit mitigation flags and standard C++ mode added to CMake files of the library, the example and the test application.<br />- **CameraParams::decode(...)** accepts data without fields (empty mask) and doesn't change the object if the data is rejected.<br />- **CameraParams::encode(...)**, **Camera::encodeCommand(...)** and **Camera::encodeSetParamCommand(...)** reject nullptr and set the size to 0, **CameraParams::encode(...)** sets the size to 0 if the buffer is too small.<br />- **Camera::decodeCommand(...)** checks the pointer, the exact size of both commands and the range of command and param IDs, returns -1 for any error (a set param command of wrong size was reported as decoded) and doesn't change the output arguments in case of error.<br />- Special member functions of **CameraParams** and **Camera** classes declared (defaulted).<br />- Example of camera controller made thread-safe, it validates the values.<br />- Test application rewritten.<br />- Documentation corrected. |
 
 
 
@@ -77,9 +82,6 @@ The library supplied by source code only. The user would be given a set of files
 
 ```xml
 CMakeLists.txt ---------------- Main CMake file of the library.
-3rdparty ---------------------- Folder with third-party libraries.
-    CMakeLists.txt ------------ CMake file to include third-party libraries.
-    ConfigReader -------------- Folder with ConfigReader library source code.
 example ----------------------- Folder with custom camera controller example.
     CMakeLists.txt ------------ CMake file of example.
     CustomCamera.cpp ---------- C++ implementation file.
@@ -135,7 +137,7 @@ public:
     /// Get camera open status.
     virtual bool isCameraOpen() = 0;
 
-    /// Get camera open status.
+    /// Get camera connection status.
     virtual bool isCameraConnected() = 0;
 
     /// Set the camera controller parameter.
@@ -167,6 +169,23 @@ public:
 
     /// Decode and execute command.
     virtual bool decodeAndExecuteCommand(uint8_t* data, int size) = 0;
+
+protected:
+
+    /// Default constructor. The class can be used as a base only.
+    Camera() = default;
+
+    /// Copy constructor.
+    Camera(const Camera& src) = default;
+
+    /// Move constructor.
+    Camera(Camera&& src) = default;
+
+    /// Copy assignment operator.
+    Camera& operator= (const Camera& src) = default;
+
+    /// Move assignment operator.
+    Camera& operator= (Camera&& src) = default;
 };
 }
 }
@@ -185,13 +204,13 @@ static std::string getVersion();
 Method can be used without **Camera** class instance:
 
 ```cpp
-cout << "Camera class v: " << Camera::getVersion() << endl;
+std::cout << "Camera class v: " << cr::camera::Camera::getVersion() << std::endl;
 ```
 
 Console output:
 
 ```bash
-Camera class v: 2.5.4
+Camera class v: 2.5.5
 ```
 
 
@@ -291,7 +310,7 @@ virtual float getParam(CameraParam id) = 0;
 | --------- | ------------------------------------------------------------ |
 | id        | Camera controller parameter ID according to [CameraParam](#cameraparam-enum) enum. |
 
-**Returns:** parameter value or **-1** of the parameters doesn't exist in particular camera controller.
+**Returns:** parameter value or **-1** if the parameter doesn't exist in particular camera controller.
 
 
 
@@ -335,10 +354,12 @@ static void encodeSetParamCommand(uint8_t* data, int& size, CameraParam id, floa
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
-| data      | Pointer to data buffer for encoded command. Must have size >= 11. |
-| size      | Size of encoded data. Will be 11 bytes.                      |
+| data      | Pointer to data buffer for encoded command. Must not be nullptr and must have size >= 11. |
+| size      | Size of encoded data. Will be 11 bytes (0 if data is nullptr). |
 | id        | Parameter ID according to [CameraParam](#cameraparam-enum) enum. |
-| value     | Parameter value.                                             |
+| value     | Parameter value. The value is not checked: it is transported as is (also NaN and infinity). |
+
+The method can't check that the buffer is valid for 11 bytes: this is the contract of the method. If **data** is nullptr nothing is encoded and **size** is set to 0.
 
 **encodeSetParamCommand(...)** is static and used without **Camera** class instance. This method used on client side (control system). Command encoding example:
 
@@ -347,10 +368,11 @@ static void encodeSetParamCommand(uint8_t* data, int& size, CameraParam id, floa
 uint8_t data[11];
 // Size of encoded data.
 int size = 0;
-// Random parameter value.
-float outValue = (float)(rand() % 20);
+// Parameter value.
+float outValue = 5.0f;
 // Encode command.
-Camera::encodeSetParamCommand(data, size, CameraParam::ROI_X0, outValue);
+cr::camera::Camera::encodeSetParamCommand(
+    data, size, cr::camera::CameraParam::ROI_X0, outValue);
 ```
 
 
@@ -365,9 +387,11 @@ static void encodeCommand(uint8_t* data, int& size, CameraCommand id);
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
-| data      | Pointer to data buffer for encoded command. Must have size >= 7. |
-| size      | Size of encoded data. Will be 7 bytes.                       |
+| data      | Pointer to data buffer for encoded command. Must not be nullptr and must have size >= 7. |
+| size      | Size of encoded data. Will be 7 bytes (0 if data is nullptr). |
 | id        | Command ID according to [CameraCommand](#cameracommand-enum) enum. |
+
+The method can't check that the buffer is valid for 7 bytes: this is the contract of the method. If **data** is nullptr nothing is encoded and **size** is set to 0.
 
 **encodeCommand(...)** is static and used without **Camera** class instance. This method used on client side (control system). Command encoding example:
 
@@ -377,7 +401,7 @@ uint8_t data[7];
 // Size of encoded data.
 int size = 0;
 // Encode command.
-Camera::encodeCommand(data, size, CameraCommand::NUC);
+cr::camera::Camera::encodeCommand(data, size, cr::camera::CameraCommand::NUC);
 ```
 
 
@@ -392,13 +416,15 @@ static int decodeCommand(uint8_t* data, int size, CameraParam& paramId, CameraCo
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
-| data      | Pointer to input command.                                    |
-| size      | Size of command. Must be 11 bytes for SET_PARAM and 7 bytes for COMMAND. |
+| data      | Pointer to input command. Must not be nullptr.               |
+| size      | Size of command. Must be exactly 11 bytes for SET_PARAM and exactly 7 bytes for COMMAND. |
 | paramId   | Camera parameter ID according to [CameraParam](#cameraparam-enum) enum. After decoding SET_PARAM command the method will return parameter ID. |
 | commandId | Camera command ID according to [CameraCommand](#cameracommand-enum) enum. After decoding COMMAND the method will return command ID. |
-| value     | Camera parameter value (after decoding SET_PARAM command).   |
+| value     | Camera parameter value (after decoding SET_PARAM command) or 0 (after decoding COMMAND). |
 
-**Returns:** **0** - in case decoding COMMAND, **1** - in case decoding SET_PARAM command or **-1** in case errors.
+The method checks the pointer, the size, the version (major and minor numbers of the command must be equal to the version of the library), the data type and the ID: the ID must be inside the range of the [CameraParam](#cameraparam-enum) or [CameraCommand](#cameracommand-enum) enum. The output arguments are changed only if the command was decoded. The value of SET_PARAM command is not checked: it is transported as is (also NaN and infinity).
+
+**Returns:** **0** - in case decoding COMMAND, **1** - in case decoding SET_PARAM command or **-1** in case errors (data is nullptr, wrong size, version, data type or ID).
 
 
 
@@ -420,19 +446,24 @@ virtual bool decodeAndExecuteCommand(uint8_t* data, int size) = 0;
 Recommended implementation of **decodeAndExecuteCommand(...)** method:
 
 ```cpp
-bool cr::camera::CustomCamera::decodeAndExecuteCommand(uint8_t* data, int size)
+bool cr::camera::CustomCamera::decodeAndExecuteCommand(
+        uint8_t* data, int size)
 {
-    // Decode command.
+    // Decode command. The decoder checks the size, the version and the IDs.
     CameraCommand commandId = CameraCommand::NUC;
     CameraParam paramId = CameraParam::NUC_MODE;
     float value = 0.0f;
-    switch (Camera::decodeCommand(data, size, paramId, commandId, value))
+    const int result =
+            Camera::decodeCommand(data, size, paramId, commandId, value);
+
+    // Execute the decoded command.
+    if (result == 0)
     {
-    // COMMAND.
-    case 0: return executeCommand(commandId);
-    // SET_PARAM.
-    case 1: return setParam(paramId, value);
-    default: return false;
+        return executeCommand(commandId);
+    }
+    if (result == 1)
+    {
+        return setParam(paramId, value);
     }
 
     return false;
@@ -454,6 +485,9 @@ namespace cr
 {
 namespace camera
 {
+/// Camera controller commands enum. The values are consecutive: the first
+/// value is RESTART and the last one is DEFREEZE. Camera::decodeCommand(...)
+/// uses them to check the command ID.
 enum class CameraCommand
 {
     /// Restart camera controller.
@@ -478,9 +512,9 @@ enum class CameraCommand
     MENU_LEFT,
     /// Menu right.
     MENU_RIGHT,
-    /// Freeze, Argument: time msec.
+    /// Freeze image.
     FREEZE,
-    /// Disable freeze.
+    /// Disable freeze. The last value of the enum.
     DEFREEZE
 };
 }
@@ -516,6 +550,9 @@ namespace cr
 {
 namespace camera
 {
+/// Camera controller params. The values are consecutive: the first value is
+/// WIDTH and the last one is CUSTOM_3. Camera::decodeCommand(...) uses them to
+/// check the param ID.
 enum class CameraParam
 {
     /// Video frame width. Value from 0 to 16384.
@@ -535,7 +572,7 @@ enum class CameraParam
     /// 2 - Shutter priority, 3 - Aperture priority.
     EXPOSURE_MODE,
     /// Exposure time of the camera sensor. The exposure time is limited by the
-    /// frame interval. Camera controller should interpret the values as 100 µs
+    /// frame interval. Camera controller should interpret the values as 100 us
     /// units, where the value 1 stands for 1/10000th of a second, 10000 for
     /// 1 second and 100000 for 10 seconds.
     EXPOSURE_TIME,
@@ -650,8 +687,8 @@ enum class CameraParam
     DETAIL,
     /// Camera settings profile. Value depends on implementation.
     PROFILE,
-    /// Connection status (read only). Shows if we have respone from camera.
-    /// Value: 0 - not connected, 2 - connected.
+    /// Connection status (read only). Shows if we have response from camera.
+    /// Value: 0 - not connected, 1 - connected.
     IS_CONNECTED,
     /// Open status (read only):
     /// 1 - camera control port open, 0 - not open.
@@ -662,7 +699,8 @@ enum class CameraParam
     CUSTOM_1,
     /// Camera custom param. Value depends on implementation.
     CUSTOM_2,
-    /// Camera custom param. Value depends on implementation.
+    /// Camera custom param. Value depends on implementation. The last value
+    /// of the enum.
     CUSTOM_3
 };
 }
@@ -691,7 +729,7 @@ enum class CameraParam
 | BRIGHTNESS                     | read / write | Brightness. Value 0 - 100%.                                  |
 | CONTRAST                       | read / write | Contrast. Value 1 - 100%.                                    |
 | GAIN_MODE                      | read / write | Gain mode. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto. |
-| GAIN                           | read / write | Gain. Value 0 - 100%.                                        |
+| GAIN                           | read / write | Gain. Value 1 - 100%.                                        |
 | SHARPENING_MODE                | read / write | Sharpening mode. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto. |
 | SHARPENING                     | read / write | Sharpening. Value 1 - 100%.                                  |
 | PALETTE                        | read / write | Palette. Value depends on implementation but it is recommended to keep default values for thermal cameras: **0** - White hot, **1** - Black hot. |
@@ -700,16 +738,16 @@ enum class CameraParam
 | SHUTTER_POSITION               | read / write | Shutter position. 0 (full close) - 65535 (full open).        |
 | SHUTTER_SPEED                  | read / write | Shutter speed. Value: 0 - 100%.                              |
 | DIGITAL_ZOOM_MODE              | read / write | Digital zoom mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
-| DIGITAL_ZOOM                   | read only    | Digital zoom. Value 1.0 (x1) - 20.0 (x20).                   |
-| EXPOSURE_COMPENSATION_MODE     | read only    | Exposure compensation mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
+| DIGITAL_ZOOM                   | read / write | Digital zoom. Value 1.0 (x1) - 20.0 (x20).                   |
+| EXPOSURE_COMPENSATION_MODE     | read / write | Exposure compensation mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
 | EXPOSURE_COMPENSATION_POSITION | read / write | Exposure compensation position. Value depends on particular camera controller. |
 | DEFOG_MODE                     | read / write | Defog mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
-| DEHAZE_MODE                    |              | Dehaze mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
+| DEHAZE_MODE                    | read / write | Dehaze mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
 | NOISE_REDUCTION_MODE           | read / write | Noise reduction mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - 2D, **3** - 3D. |
-| BLACK_WHITE_FILTER_MODE        | read only    | Black and white filter mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
+| BLACK_WHITE_FILTER_MODE        | read / write | Black and white filter mode. Value depends on implementation but it is recommended to keep default values: 0 - Off, 1 - On. |
 | FILTER_MODE                    | read / write | Filter mode. Value depends on implementation.                |
 | NUC_MODE                       | read / write | NUC mode for thermal cameras. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto. |
-| AUTO_NUC_INTERVAL              | read / write | Auto NUC interval for thermal cameras. Value in milliseconds from 0 (Off) to 100000. |
+| AUTO_NUC_INTERVAL_MSEC         | read / write | Auto NUC interval for thermal cameras. Value in milliseconds from 0 (Off) to 100000. |
 | IMAGE_FLIP                     | read / write | Image flip mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - Horizontal, **2** - Vertical, **3** - Horizontal and vertical. |
 | DDE_MODE                       | read / write | DDE mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
 | DDE_LEVEL                      | read / write | DDE level. Value depends on implementation.                  |
@@ -771,7 +809,7 @@ public:
     /// 2 - Shutter priority, 3 - Aperture priority.
     int exposureMode{1};
     /// Exposure time of the camera sensor. The exposure time is limited by the
-    /// frame interval. Camera controller should interpret the values as 100 µs
+    /// frame interval. Camera controller should interpret the values as 100 us
     /// units, where the value 1 stands for 1/10000th of a second, 10000 for
     /// 1 second and 100000 for 10 seconds.
     int exposureTime{0};
@@ -901,6 +939,8 @@ public:
     /// Camera custom param. Value depends on implementation.
     float custom3{0.0f};
 
+    // JSON read / write of the fields. The fields temperature, isConnected and
+    // isOpen are not stored in JSON.
     JSON_READABLE(CameraParams, initString, width, height, displayMode,
                   videoOutput, logMode, exposureMode, exposureTime,
                   whiteBalanceMode, whiteBalanceArea, wideDynamicRangeMode,
@@ -916,8 +956,20 @@ public:
                   changingLevel, chromaLevel, detail, profile, type, custom1,
                   custom2, custom3)
 
-    /// operator =
-    CameraParams& operator= (const CameraParams& src);
+    /// Default constructor. All fields have default values.
+    CameraParams() = default;
+
+    /// Copy constructor.
+    CameraParams(const CameraParams& src) = default;
+
+    /// Move constructor.
+    CameraParams(CameraParams&& src) = default;
+
+    /// Copy assignment operator.
+    CameraParams& operator= (const CameraParams& src) = default;
+
+    /// Move assignment operator.
+    CameraParams& operator= (CameraParams&& src) = default;
 
     /// Encode params.
     bool encode(uint8_t* data, int bufferSize, int& size,
@@ -945,7 +997,7 @@ public:
 | whiteBalanceMode             | int    | White balance mode. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto. |
 | whiteBalanceArea             | int    | White balance area. Value depends on implementation.         |
 | wideDynamicRangeMode         | int    | White dynamic range mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
-| stabilisationMode            | int    | Image stabilization mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
+| stabilizationMode            | int    | Image stabilization mode. Value depends on implementation but it is recommended to keep default values: **0** - Off, **1** - On. |
 | isoSensitivity               | int    | ISO sensitivity. Value depends on implementation.            |
 | sceneMode                    | int    | Scene mode. Value depends on implementation.                 |
 | fps                          | float  | FPS.                                                         |
@@ -953,7 +1005,7 @@ public:
 | brightness                   | int    | Brightness. Value 0 - 100%.                                  |
 | contrast                     | int    | Contrast. Value 1 - 100%.                                    |
 | gainMode                     | int    | Gain mode. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto. |
-| gain                         | int    | Gain. Value 0 - 100%.                                        |
+| gain                         | int    | Gain. Value 1 - 100%.                                        |
 | sharpeningMode               | int    | Sharpening mode. Value depends on implementation but it is recommended to keep default values: **0** - Manual, **1** - Auto. |
 | sharpening                   | int    | Sharpening. Value 1 - 100%.                                  |
 | palette                      | int    | Palette. Value depends on implementation but it is recommended to keep default values for thermal cameras: **0** - White hot, **1** - Black hot. |
@@ -979,12 +1031,12 @@ public:
 | roiY0                        | int    | ROI top-left vertical position, pixels.                      |
 | roiX1                        | int    | ROI bottom-right horizontal position, pixels.                |
 | roiY1                        | int    | ROI bottom-right vertical position, pixels.                  |
-| temperature                  | int    | Camera temperature, degree.                                  |
+| temperature                  | float  | Camera temperature, degree.                                  |
 | alcGate                      | int    | ALC gate. Value depends on implementation.                   |
-| sensitivity                  | int    | Sensor sensitivity. Value depends on implementation.         |
+| sensitivity                  | float  | Sensor sensitivity. Value depends on implementation.         |
 | changingMode                 | int    | Changing mode (day / night). Value depends on implementation. |
-| changingLevel                | int    | Changing level (day / night). Value depends on implementation. |
-| chromaLevel                  | float  | Chroma level. Values: 0 - 100%.                              |
+| changingLevel                | float  | Changing level (day / night). Value depends on implementation. |
+| chromaLevel                  | int    | Chroma level. Values: 0 - 100%.                              |
 | detail                       | int    | Details, enhancement. Values: 0 - 100%.                      |
 | profile                      | int    | Camera settings profile. Value depends on implementation.    |
 | isConnected                  | bool   | Connection status. Value: false - no camera responses, true - connected. |
@@ -994,13 +1046,13 @@ public:
 | custom2                      | float  | Camera custom param. Value depends on implementation.        |
 | custom3                      | float  | Camera custom param. Value depends on implementation.        |
 
-**None:** *CameraParams class fields listed in Table 4 **must** reflect params set/get by methods setParam(...) and getParam(...).* 
+**Note:** *CameraParams class fields listed in Table 4 **must** reflect params set/get by methods setParam(...) and getParam(...).*
 
 
 
 ## Serialize camera params
 
-[CameraParams](#cameraparams-class-description) class provides method **encode(...)** to serialize camera params (fields of [CameraParams](#cameraparams-class-description) class, see Table 4). Serialization of camera params necessary in case when you have to send camera params via communication channels. Method doesn't encode **initString** field. Method provides options to exclude particular parameters from serialization. To do this method inserts binary mask (8 bytes) where each bit represents particular parameter and **decode(...)** method recognizes it. Method declaration:
+[CameraParams](#cameraparams-class-description) class provides method **encode(...)** to serialize camera params (fields of [CameraParams](#cameraparams-class-description) class, see Table 4). Serialization of camera params necessary in case when you have to send camera params via communication channels. Method doesn't encode **initString** field. Method provides options to exclude particular parameters from serialization. To do this method inserts binary mask (8 bytes) where each bit represents particular parameter and **decode(...)** method recognizes it. The encoded data contains the data type, the version of the library (major and minor numbers), the mask and the values of the selected parameters. The values are stored in the byte order of the host (see [Portability](#portability)). Method declaration:
 
 ```cpp
 bool encode(uint8_t* data, int bufferSize, int& size, CameraParamsMask* mask = nullptr);
@@ -1008,12 +1060,12 @@ bool encode(uint8_t* data, int bufferSize, int& size, CameraParamsMask* mask = n
 
 | Parameter  | Value                                                        |
 | ---------- | ------------------------------------------------------------ |
-| data       | Pointer to data buffer. Buffer size must be >= 237 bytes.    |
-| bufferSize | Data buffer size. Buffer size must be >= 237 bytes.          |
-| size       | Size of encoded data.                                        |
-| mask       | Parameters mask - pointer to **CameraParamsMask** structure. **CameraParamsMask** (declared in Camera.h file) determines flags for each field (parameter) declared in [CameraParams](#cameraparams-class-description) class. If the user wants to exclude any parameters from serialization, he can put a pointer to the mask. If the user wants to exclude a particular parameter from serialization, he should set the corresponding flag in the **CameraParamsMask** structure. |
+| data       | Pointer to data buffer. Must not be nullptr. Buffer size must be >= 237 bytes. The method can't check that the buffer is valid for **bufferSize** bytes: this is the contract of the method. |
+| bufferSize | Data buffer size. Buffer size must be >= 237 bytes (the size of the data with all parameters selected). |
+| size       | Size of encoded data. Set to 0 if the method returns FALSE.  |
+| mask       | Parameters mask - pointer to **CameraParamsMask** structure. **CameraParamsMask** (declared in Camera.h file) determines flags for each field (parameter) declared in [CameraParams](#cameraparams-class-description) class. All flags are **true** by default. If the user wants to exclude a particular parameter from serialization, he should set the corresponding flag in the **CameraParamsMask** structure to **false** and put a pointer to the mask. If **mask** is nullptr all parameters are encoded. |
 
-**Returns:** TRUE if params encoded (serialized) or FALSE if not.
+**Returns:** TRUE if params encoded (serialized) or FALSE if not (**data** is nullptr or **bufferSize** is less than 237).
 
 **CameraParamsMask** structure declaration:
 
@@ -1085,37 +1137,45 @@ Example without parameters mask:
 
 ```cpp
 // Encode data.
-CameraParams in;
+cr::camera::CameraParams in;
 in.profile = 10;
 uint8_t data[1024];
 int size = 0;
-in.encode(data, 1024, size);
-cout << "Encoded data size: " << size << " bytes" << endl;
+if (!in.encode(data, 1024, size))
+{
+    std::cout << "Can't encode params" << std::endl;
+    return false;
+}
+std::cout << "Encoded data size: " << size << " bytes" << std::endl;
 ```
 
 Example with parameters mask:
 
 ```cpp
 // Prepare params.
-CameraParams in;
+cr::camera::CameraParams in;
 in.profile = 3;
 
 // Prepare mask.
-CameraParamsMask mask;
+cr::camera::CameraParamsMask mask;
 mask.profile = false; // Exclude profile. Others by default.
 
 // Encode.
 uint8_t data[1024];
 int size = 0;
-in.encode(data, 1024, size, &mask);
-cout << "Encoded data size: " << size << " bytes" << endl;
+if (!in.encode(data, 1024, size, &mask))
+{
+    std::cout << "Can't encode params" << std::endl;
+    return false;
+}
+std::cout << "Encoded data size: " << size << " bytes" << std::endl;
 ```
 
 
 
 ## Deserialize camera params
 
-[CameraParams](#cameraparams-class-description) class provides method **decode(...)** to deserialize camera params (fields of [CameraParams](#cameraparams-class-description) class, see Table 4). Deserialization of camera params necessary in case when you need to receive params via communication channels. Method automatically recognizes which parameters were serialized by **encode(...)** method. Method doesn't decode **initString** field. Method declaration:
+[CameraParams](#cameraparams-class-description) class provides method **decode(...)** to deserialize camera params (fields of [CameraParams](#cameraparams-class-description) class, see Table 4). Deserialization of camera params necessary in case when you need to receive params via communication channels. Method automatically recognizes which parameters were serialized by **encode(...)** method. Method doesn't decode **initString** field: it is set to an empty string. Method checks the data type, the version (major and minor numbers of the data must be equal to the version of the library) and the size of the data before reading each parameter. A parameter which is not selected by the mask of the encoded data is set to zero (false). The values of the parameters are not checked against any range. Mask bits which don't belong to any parameter and bytes after the last parameter are ignored. Method declaration:
 
 ```cpp
 bool decode(uint8_t* data, int dataSize);
@@ -1123,109 +1183,133 @@ bool decode(uint8_t* data, int dataSize);
 
 | Parameter | Value                                                 |
 | --------- | ----------------------------------------------------- |
-| data      | Pointer to data buffer with serialized camera params. |
-| dataSize  | Size of command data.                                 |
+| data      | Pointer to data buffer with serialized camera params. Must not be nullptr. |
+| dataSize  | Size of the data, bytes. Must be >= 11 (the size of the data without parameters). |
 
-**Returns:** TRUE if params decoded (deserialized) or FALSE if not.
+**Returns:** TRUE if params decoded (deserialized) or FALSE if not. If FALSE is returned the object is not changed.
 
 Example:
 
 ```cpp
 // Encode data.
-CameraParams in;
+cr::camera::CameraParams in;
 uint8_t data[1024];
 int size = 0;
-in.encode(data, 1024, size);
-cout << "Encoded data size: " << size << " bytes" << endl;
+if (!in.encode(data, 1024, size))
+{
+    std::cout << "Can't encode params" << std::endl;
+    return false;
+}
+std::cout << "Encoded data size: " << size << " bytes" << std::endl;
 
 // Decode data.
-CameraParams out;
+cr::camera::CameraParams out;
 if (!out.decode(data, size))
-    cout << "Can't decode data" << endl;
+{
+    std::cout << "Can't decode data" << std::endl;
+    return false;
+}
 ```
 
 
 
 ## Read params from JSON file and write to JSON file
 
-**Camera** library depends on [ConfigReader](https://rapidpixel.constantrobotics.com/docs/Service/ConfigReader.html) library which provides methods to read params from JSON file and to write params to JSON file. Example of writing and reading params to JSON file:
+**Camera** library depends on [ConfigReader](https://rapidpixel.constantrobotics.com/docs/Service/ConfigReader.html) library which provides methods to read params from JSON file and to write params to JSON file. The fields **temperature**, **isConnected** and **isOpen** are not stored in JSON. If the document is invalid, or a stored field is missing or has a wrong type, **get(...)** returns FALSE and the object is not changed. A value of an int field which is outside of the int range is rejected, a number with a fractional part is truncated. Example of writing and reading params to JSON file:
 
 ```cpp
+// Prepare params.
+cr::camera::CameraParams in;
+in.initString = "dfhglsjirhuhjfb";
+in.width = 99;
+in.fps = 133.0f;
+in.digitalZoom = 201.0f;
+
 // Write params to file.
 cr::utils::ConfigReader inConfig;
-inConfig.set(in, "cameraParams");
-inConfig.writeToFile("TestCameraParams.json");
+if (!inConfig.set(in, "cameraParams") ||
+    !inConfig.writeToFile("TestCameraParams.json"))
+{
+    std::cout << "Can't write config file" << std::endl;
+    return false;
+}
 
 // Read params from file.
 cr::utils::ConfigReader outConfig;
-if(!outConfig.readFromFile("TestCameraParams.json"))
+if (!outConfig.readFromFile("TestCameraParams.json"))
 {
-    cout << "Can't open config file" << endl;
+    std::cout << "Can't open config file" << std::endl;
+    return false;
+}
+cr::camera::CameraParams out;
+if (!outConfig.get(out, "cameraParams"))
+{
+    std::cout << "Can't read params from config file" << std::endl;
     return false;
 }
 ```
 
-**TestCameraParams.json** will look like:
+**TestCameraParams.json** will look like (the fields are written in the order of the **CameraParams** declaration):
 
 ```json
 {
     "cameraParams": {
-        "agcMode": 90,
-        "alcGate": 6,
-        "autoNucIntervalMsec": 71,
-        "blackAndWhiteFilterMode": 238,
-        "brightness": 62,
-        "brightnessMode": 95,
-        "changingLevel": 240.0,
-        "changingMode": 138,
-        "chromaLevel": 83,
-        "contrast": 219,
-        "custom1": 215.0,
-        "custom2": 19.0,
-        "custom3": 135.0,
-        "ddeLevel": 13.0,
-        "ddeMode": 229,
-        "defogMode": 236,
-        "dehazeMode": 109,
-        "detail": 125,
-        "digitalZoom": 201.0,
-        "digitalZoomMode": 33,
-        "displayMode": 2,
-        "exposureCompensationMode": 138,
-        "exposureCompensationPosition": 99,
-        "exposureMode": 216,
-        "exposureTime": 167,
-        "filterMode": 188,
-        "fps": 133.0,
-        "gain": 248,
-        "gainMode": 106,
-        "height": 79,
-        "imageFlip": 100,
         "initString": "dfhglsjirhuhjfb",
-        "isoSensitivity": 26,
-        "logMode": 168,
-        "noiseReductionMode": 178,
-        "nucMode": 218,
-        "palette": 97,
-        "profile": 194,
-        "roiX0": 78,
-        "roiX1": 39,
-        "roiY0": 168,
-        "roiY1": 27,
-        "sceneMode": 77,
-        "sensitivity": 89.0,
-        "sharpening": 209,
-        "sharpeningMode": 115,
-        "shutterMode": 208,
-        "shutterPos": 83,
-        "shutterSpeed": 53,
-        "stabilizationMode": 67,
-        "type": 52,
-        "videoOutput": 206,
-        "whiteBalanceArea": 69,
-        "whiteBalanceMode": 10,
-        "wideDynamicRangeMode": 106,
-        "width": 99
+        "width": 99,
+        "height": 0,
+        "displayMode": 0,
+        "videoOutput": 0,
+        "logMode": 0,
+        "exposureMode": 1,
+        "exposureTime": 0,
+        "whiteBalanceMode": 1,
+        "whiteBalanceArea": 0,
+        "wideDynamicRangeMode": 0,
+        "stabilizationMode": 0,
+        "isoSensitivity": 0,
+        "sceneMode": 0,
+        "fps": 133.0,
+        "brightnessMode": 1,
+        "brightness": 0,
+        "contrast": 0,
+        "gainMode": 1,
+        "gain": 0,
+        "sharpeningMode": 0,
+        "sharpening": 0,
+        "palette": 0,
+        "agcMode": 1,
+        "shutterMode": 1,
+        "shutterPos": 0,
+        "shutterSpeed": 0,
+        "digitalZoomMode": 0,
+        "digitalZoom": 201.0,
+        "exposureCompensationMode": 0,
+        "exposureCompensationPosition": 0,
+        "defogMode": 0,
+        "dehazeMode": 0,
+        "noiseReductionMode": 0,
+        "blackAndWhiteFilterMode": 0,
+        "filterMode": 0,
+        "nucMode": 0,
+        "autoNucIntervalMsec": 0,
+        "imageFlip": 0,
+        "ddeMode": 0,
+        "ddeLevel": 0.0,
+        "roiX0": 0,
+        "roiY0": 0,
+        "roiX1": 0,
+        "roiY1": 0,
+        "alcGate": 0,
+        "sensitivity": 0.0,
+        "changingMode": 0,
+        "changingLevel": 0.0,
+        "chromaLevel": 0,
+        "detail": 0,
+        "profile": 0,
+        "type": 0,
+        "custom1": 0.0,
+        "custom2": 0.0,
+        "custom3": 0.0
     }
 }
 ```
@@ -1234,9 +1318,23 @@ if(!outConfig.readFromFile("TestCameraParams.json"))
 
 # Build and connect to your project
 
-Typical commands to build **Camera** library:
+
+
+## Build stand alone
+
+The repository doesn't contain sub-repositories. The **ConfigReader** library which **Camera** depends on must be cloned into the same folder as **Camera**. The folder structure must be:
 
 ```bash
+<work folder>
+    Camera
+    ConfigReader
+```
+
+Typical commands to build **Camera** library, the test application and the example (use the URLs of the repositories provided to you):
+
+```bash
+git clone <Camera repository URL>
+git clone <ConfigReader repository URL>
 cd Camera
 mkdir build
 cd build
@@ -1244,7 +1342,27 @@ cmake ..
 make
 ```
 
-If you want connect **Camera** library to your CMake project as source code you can make follow. For example, if your repository has structure:
+On Windows use `cmake --build . --config Release` instead of `make`. If **Camera** is the top-level CMake project, the main CMakeLists.txt file adds the folder ../ConfigReader before the library itself. If the folder doesn't exist CMake stops with an error.
+
+
+
+## CMake options
+
+**Table 5** - CMake options of the repository. In the options below ${PARENT} is the prefix defined by the top-level project (empty if **Camera** is the top-level project).
+
+| Option                              | Default                                           | Description                                                  |
+| ----------------------------------- | ------------------------------------------------- | ------------------------------------------------------------ |
+| ${PARENT}_CAMERA                    | ON                                                | Build the library.                                           |
+| ${PARENT}_CAMERA_TEST               | ON (stand alone), OFF (included in other project) | Build the test application.                                  |
+| ${PARENT}_CAMERA_EXAMPLE            | ON (stand alone), OFF (included in other project) | Build the example of the camera controller.                  |
+| ${PARENT}_SUBMODULE_CACHE_OVERWRITE | ON                                                | Forced rewriting of the options above in the CMake cache. The top-level project sets it to OFF when it includes **Camera** as a sub-repository. |
+| CMAKE_BUILD_TYPE                    | Release (if not specified)                        | Build type.                                                  |
+
+
+
+## Connect to your project
+
+If you want to connect **Camera** library to your CMake project as source code you can make follow. For example, if your repository has structure:
 
 ```bash
 CMakeLists.txt
@@ -1254,15 +1372,17 @@ src
     yourLib.cpp
 ```
 
-You can add repository **Camera** as submodule by commands:
+Create **3rdparty** folder in your repository folder and put the repositories **ConfigReader** and **Camera** there (the repositories can be cloned, copied or added as submodules of your repository, for example `git submodule add <Camera repository URL> 3rdparty/Camera`; **Camera** doesn't contain sub-repositories):
 
 ```bash
 cd <your repository folder>
-git submodule add https://github.com/ConstantRobotics-Ltd/Camera.git 3rdparty/Camera
-git submodule update --init --recursive
+mkdir 3rdparty
+cd 3rdparty
+git clone <ConfigReader repository URL>
+git clone <Camera repository URL>
 ```
 
-Create **3rdparty** folder in your repository folder and copy **Camera** repository folder there. New structure of your repository:
+New structure of your repository:
 
 ```bash
 CMakeLists.txt
@@ -1271,6 +1391,7 @@ src
     yourLib.h
     yourLib.cpp
 3rdparty
+    ConfigReader
     Camera
 ```
 
@@ -1298,6 +1419,13 @@ SET(${PARENT}_SUBMODULE_CACHE_OVERWRITE OFF CACHE BOOL "" FORCE)
 ## CONFIGURATION
 ## 3rd-party submodules configuration
 ################################################################################
+SET(${PARENT}_SUBMODULE_CONFIG_READER                   ON  CACHE BOOL "" FORCE)
+if (${PARENT}_SUBMODULE_CONFIG_READER)
+    SET(${PARENT}_CONFIG_READER                         ON  CACHE BOOL "" FORCE)
+    SET(${PARENT}_CONFIG_READER_EXAMPLES                OFF CACHE BOOL "" FORCE)
+    SET(${PARENT}_CONFIG_READER_TESTS                   OFF CACHE BOOL "" FORCE)
+endif()
+
 SET(${PARENT}_SUBMODULE_CAMERA                          ON  CACHE BOOL "" FORCE)
 if (${PARENT}_SUBMODULE_CAMERA)
     SET(${PARENT}_CAMERA                                ON  CACHE BOOL "" FORCE)
@@ -1309,12 +1437,16 @@ endif()
 ## INCLUDING SUBDIRECTORIES
 ## Adding subdirectories according to the 3rd-party configuration
 ################################################################################
+if (${PARENT}_SUBMODULE_CONFIG_READER)
+    add_subdirectory(ConfigReader)
+endif()
+
 if (${PARENT}_SUBMODULE_CAMERA)
     add_subdirectory(Camera)
 endif()
 ```
 
-File **3rdparty/CMakeLists.txt** adds folder **Camera** to your project and excludes test application and example (Camera class test applications and example of custom Camera class implementation) from compiling (by default test application and example excluded from compiling if **Camera** included as subrepository). Your repository new structure will be:
+File **3rdparty/CMakeLists.txt** adds folders **ConfigReader** and **Camera** to your project and excludes test application and example (Camera class test applications and example of custom Camera class implementation) from compiling (by default test application and example excluded from compiling if **Camera** included as subrepository). The folders are added in the order of their dependencies: **Camera** depends on **ConfigReader**. When **Camera** is included in another project it doesn't add **ConfigReader** by itself: your project must add it (before or after **Camera**). If it is not added, the compilation stops with the error "ConfigReader.h: No such file or directory". Your repository new structure will be:
 
 ```bash
 CMakeLists.txt
@@ -1324,6 +1456,7 @@ src
     yourLib.cpp
 3rdparty
     CMakeLists.txt
+    ConfigReader
     Camera
 ```
 
@@ -1345,7 +1478,7 @@ Done!
 
 # How to make custom implementation
 
-The **Camera** class provides only an interface, data structures, and methods for encoding and decoding commands and params. To create your own implementation of the camera controller, you must include the Camera repository in your project (see [Build and connect to your project](#build-and-connect-to-your-project) section). The catalogue **example** (see [Library files](#library-files) section) includes an example of the design of the custom camera controller. You must implement all the methods of the Camera interface class. Custom camera class declaration:
+The **Camera** class provides only an interface, data structures, and methods for encoding and decoding commands and params. To create your own implementation of the camera controller, you must include the Camera repository in your project (see [Build and connect to your project](#build-and-connect-to-your-project) section). The catalogue **example** (see [Library files](#library-files) section) includes an example of the design of the custom camera controller. You must implement all the methods of the Camera interface class. The methods which are declared thread-safe in the description above must be thread-safe in the implementation (the example holds a mutex while it reads or changes the params). Custom camera class declaration:
 
 ```cpp
 namespace cr
@@ -1363,7 +1496,19 @@ public:
     CustomCamera();
 
     /// Class destructor.
-    ~CustomCamera();
+    ~CustomCamera() override;
+
+    /// Copy constructor is deleted: the class owns a mutex.
+    CustomCamera(const CustomCamera&) = delete;
+
+    /// Move constructor is deleted: the class owns a mutex.
+    CustomCamera(CustomCamera&&) = delete;
+
+    /// Copy assignment is deleted: the class owns a mutex.
+    CustomCamera& operator= (const CustomCamera&) = delete;
+
+    /// Move assignment is deleted: the class owns a mutex.
+    CustomCamera& operator= (CustomCamera&&) = delete;
 
     /// Get class version.
     static std::string getVersion();
@@ -1380,7 +1525,7 @@ public:
     /// Get camera open status.
     bool isCameraOpen() override;
 
-    /// Get camera open status.
+    /// Get camera connection status.
     bool isCameraConnected() override;
 
     /// Set the camera controller param.
@@ -1400,9 +1545,17 @@ public:
 
 private:
 
-    /// Parameters structure (default params).
+    /// Camera params. Protected by m_paramsMutex.
     CameraParams m_params;
+    /// Mutex to protect m_params.
+    std::mutex m_paramsMutex;
 };
 }
 }
 ```
+
+
+
+# Portability
+
+The library and the example use standard C++17 only (no compiler extensions) and have no CPU specific code. The encoded params and commands store values of int and float types as raw 4 bytes values in the byte order of the host: the library doesn't convert the byte order and checks at compile time that int and float have 4 bytes. The library was built and its test application was run on little-endian x86-64 (Windows with MSVC 2022, Linux with GCC 12 and 13, Linux with Clang 15 and 18) and on little-endian aarch64 (Linux, GCC cross compiler, qemu). Data encoded on a host can be decoded only on a host with the same byte order.

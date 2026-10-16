@@ -1,6 +1,6 @@
 #pragma once
-#include <string>
 #include <cstdint>
+#include <string>
 #include "ConfigReader.h"
 
 
@@ -11,73 +11,81 @@ namespace camera
 {
 /**
  * @brief Camera params mask.
+ *
+ * Each flag selects the CameraParams field with the same name for
+ * serialization (see CameraParams::encode(...)). The order of the flags is the
+ * order of the bits of the mask in the encoded data: the first flag is the
+ * most significant bit of the first mask byte.
  */
 typedef struct CameraParamsMask
 {
-    bool width{true};
-    bool height{true};
-    bool displayMode{true};
-    bool videoOutput{true};
-    bool logMode{true};
-    bool exposureMode{true};
-    bool exposureTime{true};
-    bool whiteBalanceMode{true};
-    bool whiteBalanceArea{true};
-    bool wideDynamicRangeMode{true};
-    bool stabilizationMode{true};
-    bool isoSensitivity{true};
-    bool sceneMode{true};
-    bool fps{true};
-    bool brightnessMode{true};
-    bool brightness{true};
-    bool contrast{true};
-    bool gainMode{true};
-    bool gain{true};
-    bool sharpeningMode{true};
-    bool sharpening{true};
-    bool palette{true};
-    bool agcMode{true};
-    bool shutterMode{true};
-    bool shutterPos{true};
-    bool shutterSpeed{true};
-    bool digitalZoomMode{true};
-    bool digitalZoom{true};
-    bool exposureCompensationMode{true};
-    bool exposureCompensationPosition{true};
-    bool defogMode{true};
-    bool dehazeMode{true};
-    bool noiseReductionMode{true};
-    bool blackAndWhiteFilterMode{true};
-    bool filterMode{true};
-    bool nucMode{true};
-    bool autoNucIntervalMsec{true};
-    bool imageFlip{true};
-    bool ddeMode{true};
-    bool ddeLevel{true};
-    bool roiX0{true};
-    bool roiY0{true};
-    bool roiX1{true};
-    bool roiY1{true};
-    bool temperature{true};
-    bool alcGate{true};
-    bool sensitivity{true};
-    bool changingMode{true};
-    bool changingLevel{true};
-    bool chromaLevel{true};
-    bool detail{true};
-    bool profile{true};
-    bool isConnected{true};
-    bool isOpen{true};
-    bool type{true};
-    bool custom1{true};
-    bool custom2{true};
-    bool custom3{true};
+    bool width{true};                         ///< Serialize the field.
+    bool height{true};                        ///< Serialize the field.
+    bool displayMode{true};                   ///< Serialize the field.
+    bool videoOutput{true};                   ///< Serialize the field.
+    bool logMode{true};                       ///< Serialize the field.
+    bool exposureMode{true};                  ///< Serialize the field.
+    bool exposureTime{true};                  ///< Serialize the field.
+    bool whiteBalanceMode{true};              ///< Serialize the field.
+    bool whiteBalanceArea{true};              ///< Serialize the field.
+    bool wideDynamicRangeMode{true};          ///< Serialize the field.
+    bool stabilizationMode{true};             ///< Serialize the field.
+    bool isoSensitivity{true};                ///< Serialize the field.
+    bool sceneMode{true};                     ///< Serialize the field.
+    bool fps{true};                           ///< Serialize the field.
+    bool brightnessMode{true};                ///< Serialize the field.
+    bool brightness{true};                    ///< Serialize the field.
+    bool contrast{true};                      ///< Serialize the field.
+    bool gainMode{true};                      ///< Serialize the field.
+    bool gain{true};                          ///< Serialize the field.
+    bool sharpeningMode{true};                ///< Serialize the field.
+    bool sharpening{true};                    ///< Serialize the field.
+    bool palette{true};                       ///< Serialize the field.
+    bool agcMode{true};                       ///< Serialize the field.
+    bool shutterMode{true};                   ///< Serialize the field.
+    bool shutterPos{true};                    ///< Serialize the field.
+    bool shutterSpeed{true};                  ///< Serialize the field.
+    bool digitalZoomMode{true};               ///< Serialize the field.
+    bool digitalZoom{true};                   ///< Serialize the field.
+    bool exposureCompensationMode{true};      ///< Serialize the field.
+    bool exposureCompensationPosition{true};  ///< Serialize the field.
+    bool defogMode{true};                     ///< Serialize the field.
+    bool dehazeMode{true};                    ///< Serialize the field.
+    bool noiseReductionMode{true};            ///< Serialize the field.
+    bool blackAndWhiteFilterMode{true};       ///< Serialize the field.
+    bool filterMode{true};                    ///< Serialize the field.
+    bool nucMode{true};                       ///< Serialize the field.
+    bool autoNucIntervalMsec{true};           ///< Serialize the field.
+    bool imageFlip{true};                     ///< Serialize the field.
+    bool ddeMode{true};                       ///< Serialize the field.
+    bool ddeLevel{true};                      ///< Serialize the field.
+    bool roiX0{true};                         ///< Serialize the field.
+    bool roiY0{true};                         ///< Serialize the field.
+    bool roiX1{true};                         ///< Serialize the field.
+    bool roiY1{true};                         ///< Serialize the field.
+    bool temperature{true};                   ///< Serialize the field.
+    bool alcGate{true};                       ///< Serialize the field.
+    bool sensitivity{true};                   ///< Serialize the field.
+    bool changingMode{true};                  ///< Serialize the field.
+    bool changingLevel{true};                 ///< Serialize the field.
+    bool chromaLevel{true};                   ///< Serialize the field.
+    bool detail{true};                        ///< Serialize the field.
+    bool profile{true};                       ///< Serialize the field.
+    bool isConnected{true};                   ///< Serialize the field.
+    bool isOpen{true};                        ///< Serialize the field.
+    bool type{true};                          ///< Serialize the field.
+    bool custom1{true};                       ///< Serialize the field.
+    bool custom2{true};                       ///< Serialize the field.
+    bool custom3{true};                       ///< Serialize the field.
 } CameraParamsMask;
 
 
 
 /**
  * @brief Camera params class.
+ *
+ * @note The class is not thread-safe: an object must not be accessed from
+ * several threads at the same time without external synchronization.
  */
 class CameraParams
 {
@@ -101,7 +109,7 @@ public:
     /// 2 - Shutter priority, 3 - Aperture priority.
     int exposureMode{1};
     /// Exposure time of the camera sensor. The exposure time is limited by the
-    /// frame interval. Camera controller should interpret the values as 100 µs
+    /// frame interval. Camera controller should interpret the values as 100 us
     /// units, where the value 1 stands for 1/10000th of a second, 10000 for
     /// 1 second and 100000 for 10 seconds.
     int exposureTime{0};
@@ -231,6 +239,8 @@ public:
     /// Camera custom param. Value depends on implementation.
     float custom3{0.0f};
 
+    // JSON read / write of the fields. The fields temperature, isConnected and
+    // isOpen are not stored in JSON.
     JSON_READABLE(CameraParams, initString, width, height, displayMode,
                   videoOutput, logMode, exposureMode, exposureTime,
                   whiteBalanceMode, whiteBalanceArea, wideDynamicRangeMode,
@@ -247,35 +257,83 @@ public:
                   custom2, custom3)
 
     /**
-     * @brief operator =
-     * @param src Source object.
-     * @return CameraParams object.
+     * @brief Default constructor. All fields have default values.
      */
-    CameraParams& operator= (const CameraParams& src);
+    CameraParams() = default;
 
     /**
-     * @brief Encode params. The method doesn't encode initString.
-     * @param data Pointer to data buffer. Buffer size must be >= 237 bytes.
-     * @brief bufferSize Data buffer size. Buffer size must be >= 237 bytes.
-     * @param size Size of data.
-     * @param mask Pointer to parameters mask structure.
-     * @return TRUE if params encoded or FALSE if not.
+     * @brief Copy constructor.
+     * @param src Source object.
+     */
+    CameraParams(const CameraParams& src) = default;
+
+    /**
+     * @brief Move constructor.
+     * @param src Source object.
+     */
+    CameraParams(CameraParams&& src) = default;
+
+    /**
+     * @brief Copy assignment operator.
+     * @param src Source object.
+     * @return Reference to this object.
+     */
+    CameraParams& operator= (const CameraParams& src) = default;
+
+    /**
+     * @brief Move assignment operator.
+     * @param src Source object.
+     * @return Reference to this object.
+     */
+    CameraParams& operator= (CameraParams&& src) = default;
+
+    /**
+     * @brief Encode (serialize) params. The method doesn't encode initString.
+     *
+     * The encoded data contains the data type, the version of the library
+     * (major and minor), the mask of 8 bytes and the values of the fields
+     * selected by the mask. The values are stored in the byte order of the
+     * host.
+     *
+     * @param data Pointer to data buffer. Must not be nullptr. The method
+     * can't check that the buffer is valid for bufferSize bytes: this is the
+     * contract of the method.
+     * @param bufferSize Data buffer size, bytes. Must be >= 237 (the size of
+     * the data with all fields selected).
+     * @param size Size of encoded data, bytes. Set to 0 if the method returns
+     * FALSE.
+     * @param mask Pointer to parameters mask structure. If nullptr all fields
+     * are encoded.
+     * @return TRUE if params encoded or FALSE if not (data is nullptr or
+     * bufferSize is too small).
      */
     bool encode(uint8_t* data, int bufferSize, int& size,
                 CameraParamsMask* mask = nullptr);
 
     /**
-     * @brief Decode params. The method doesn't decode initString.
-     * @param data Pointer to data.
-     * @brief dataSize Size of data.
-     * @return TRUE is params decoded or FALSE if not.
+     * @brief Decode (deserialize) params encoded by encode(...) method.
+     *
+     * The method checks the data type, the version and the size of the data
+     * before reading each field. A field which is not selected by the mask of
+     * the encoded data is set to zero (false) and initString is set to an
+     * empty string. Mask bits which don't belong to any field and bytes after
+     * the last field are ignored. Values of the fields are not checked against
+     * any range: the camera controller must validate them before use.
+     *
+     * @param data Pointer to encoded data. Must not be nullptr.
+     * @param dataSize Size of the encoded data, bytes. Must be >= 11 (the
+     * size of the data without fields).
+     * @return TRUE if params decoded or FALSE if not. If FALSE is returned
+     * the object is not changed.
      */
     bool decode(uint8_t* data, int dataSize);
 };
 
 
 
-/// Camera controller commands enum.
+/// Camera controller commands enum. The values are consecutive: the first
+/// value is RESTART and the last one is DEFREEZE. Camera::decodeCommand(...)
+/// uses them to check the command ID.
 enum class CameraCommand
 {
     /// Restart camera controller.
@@ -300,15 +358,17 @@ enum class CameraCommand
     MENU_LEFT,
     /// Menu right.
     MENU_RIGHT,
-    /// Freeze, Argument: time msec.
+    /// Freeze image.
     FREEZE,
-    /// Disable freeze.
+    /// Disable freeze. The last value of the enum.
     DEFREEZE
 };
 
 
 
-/// Camera controller params.
+/// Camera controller params. The values are consecutive: the first value is
+/// WIDTH and the last one is CUSTOM_3. Camera::decodeCommand(...) uses them to
+/// check the param ID.
 enum class CameraParam
 {
     /// Video frame width. Value from 0 to 16384.
@@ -328,7 +388,7 @@ enum class CameraParam
     /// 2 - Shutter priority, 3 - Aperture priority.
     EXPOSURE_MODE,
     /// Exposure time of the camera sensor. The exposure time is limited by the
-    /// frame interval. Camera controller should interpret the values as 100 µs
+    /// frame interval. Camera controller should interpret the values as 100 us
     /// units, where the value 1 stands for 1/10000th of a second, 10000 for
     /// 1 second and 100000 for 10 seconds.
     EXPOSURE_TIME,
@@ -443,8 +503,8 @@ enum class CameraParam
     DETAIL,
     /// Camera settings profile. Value depends on implementation.
     PROFILE,
-    /// Connection status (read only). Shows if we have respone from camera.
-    /// Value: 0 - not connected, 2 - connected.
+    /// Connection status (read only). Shows if we have response from camera.
+    /// Value: 0 - not connected, 1 - connected.
     IS_CONNECTED,
     /// Open status (read only):
     /// 1 - camera control port open, 0 - not open.
@@ -455,7 +515,8 @@ enum class CameraParam
     CUSTOM_1,
     /// Camera custom param. Value depends on implementation.
     CUSTOM_2,
-    /// Camera custom param. Value depends on implementation.
+    /// Camera custom param. Value depends on implementation. The last value
+    /// of the enum.
     CUSTOM_3
 };
 
@@ -489,7 +550,8 @@ public:
     /**
      * @brief Init camera controller by set of parameters. Can be used instead
      * openCamera(...) method.
-     * @param initString Init string. Format depends on camera controller.
+     * @param params Camera parameters. The initString field is used as the
+     * init string.
      * @return TRUE if the camera controller is init or FALSE if not.
      */
     virtual bool initCamera(CameraParams& params) = 0;
@@ -506,13 +568,15 @@ public:
     virtual bool isCameraOpen() = 0;
 
     /**
-     * @brief Get camera open status.
-     * @return TRUE if the camera is open or FALSE.
+     * @brief Get camera connection status.
+     * @return TRUE if the camera controller has data exchange with the camera
+     * equipment or FALSE.
      */
     virtual bool isCameraConnected() = 0;
 
     /**
      * @brief Set the camera controller parameter.
+     * @note The implementation must be thread-safe.
      * @param id Param ID.
      * @param value Param value.
      * @return TRUE if the property set or FALSE.
@@ -521,19 +585,22 @@ public:
 
     /**
      * @brief Get the camera controller parameter.
+     * @note The implementation must be thread-safe.
      * @param id Parameter ID.
-     * @return int Param value or -1 of the param not exists.
+     * @return Param value or -1 if the param doesn't exist.
      */
     virtual float getParam(CameraParam id) = 0;
 
     /**
      * @brief Get all camera controller parameters.
-     * @param params reference to CameraParams object.
+     * @note The implementation must be thread-safe.
+     * @param params Reference to CameraParams object.
      */
     virtual void getParams(CameraParams& params) = 0;
 
     /**
      * @brief Execute camera controller action command.
+     * @note The implementation must be thread-safe.
      * @param id Command ID.
      * @return TRUE if the command executed or FALSE.
      */
@@ -541,8 +608,15 @@ public:
 
     /**
      * @brief Encode set param command.
-     * @param data Pointer to data buffer. Must have size >= 11.
-     * @param size Size of encoded command. Will be 11 bytes.
+     *
+     * The method is thread-safe. The value is not checked: it is transported
+     * as is (also NaN and infinity).
+     *
+     * @param data Pointer to data buffer. Must not be nullptr. The method
+     * can't check that the buffer is valid for 11 bytes: this is the contract
+     * of the method.
+     * @param size Size of encoded command, bytes. Is 11 after encoding and 0
+     * if data is nullptr.
      * @param id Camera parameter id.
      * @param value Camera parameter value.
      */
@@ -551,8 +625,14 @@ public:
 
     /**
      * @brief Encode command.
-     * @param data Pointer to data buffer. Must have size >= 7.
-     * @param size Size of encoded data. Will be 7 bytes.
+     *
+     * The method is thread-safe.
+     *
+     * @param data Pointer to data buffer. Must not be nullptr. The method
+     * can't check that the buffer is valid for 7 bytes: this is the contract
+     * of the method.
+     * @param size Size of encoded data, bytes. Is 7 after encoding and 0 if
+     * data is nullptr.
      * @param id Camera command ID.
      */
     static void encodeCommand(
@@ -560,12 +640,19 @@ public:
 
     /**
      * @brief Decode command.
-     * @param data Pointer to command data.
-     * @param size Size of data. Must be 7 bytes for action command and 11 bytes
+     *
+     * The method checks the pointer, the size, the version and the ID: the ID
+     * must be inside the range of CameraCommand or CameraParam enum. The
+     * output arguments are changed only if the command was decoded. The
+     * method is thread-safe.
+     *
+     * @param data Pointer to command data. Must not be nullptr.
+     * @param size Size of data, bytes. Must be 7 for action command and 11
      * for set param command.
-     * @param paramId Output command ID.
-     * @param commandId Output command ID.
-     * @param value Param or command value.
+     * @param paramId Output param ID (set param command only).
+     * @param commandId Output command ID (action command only).
+     * @param value Output param value (set param command) or 0 (action
+     * command).
      * @return 0 - command decoded, 1 - set param command decoded, -1 - error.
      */
     static int decodeCommand(uint8_t* data,
@@ -576,11 +663,45 @@ public:
 
     /**
      * @brief Decode and execute command.
+     * @note The implementation must be thread-safe.
      * @param data Pointer to command data.
      * @param size Size of data.
      * @return TRUE if command decoded and executed or FALSE if not.
      */
     virtual bool decodeAndExecuteCommand(uint8_t* data, int size) = 0;
+
+protected:
+
+    /**
+     * @brief Default constructor. The class can be used as a base only.
+     */
+    Camera() = default;
+
+    /**
+     * @brief Copy constructor.
+     * @param src Source object.
+     */
+    Camera(const Camera& src) = default;
+
+    /**
+     * @brief Move constructor.
+     * @param src Source object.
+     */
+    Camera(Camera&& src) = default;
+
+    /**
+     * @brief Copy assignment operator.
+     * @param src Source object.
+     * @return Reference to this object.
+     */
+    Camera& operator= (const Camera& src) = default;
+
+    /**
+     * @brief Move assignment operator.
+     * @param src Source object.
+     * @return Reference to this object.
+     */
+    Camera& operator= (Camera&& src) = default;
 };
 }
 }

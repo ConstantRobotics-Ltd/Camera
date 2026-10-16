@@ -1,12 +1,230 @@
 #include "Camera.h"
 #include "CameraVersion.h"
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <string>
+#include <tuple>
+#include <utility>
 
 
 
-cr::camera::Camera::~Camera()
+namespace
 {
+// Encoded data stores int and float fields as raw 4 bytes values.
+static_assert(sizeof(int) == 4, "int must be 4 bytes");
+static_assert(sizeof(float) == 4, "float must be 4 bytes");
 
+/// Number of CameraParams fields which are serialized (initString is not).
+constexpr size_t FIELDS_NUMBER{58};
+/// Number of bool fields (isConnected and isOpen).
+constexpr int FLAGS_NUMBER{2};
+/// Size of an int or float field in the encoded data, bytes.
+constexpr int VALUE_SIZE{4};
+/// Size of a bool field in the encoded data, bytes.
+constexpr int FLAG_SIZE{1};
+
+/// Data type of encoded params (first byte of the encoded data).
+constexpr uint8_t PARAMS_DATA_TYPE{0x02};
+/// Data type of encoded action command.
+constexpr uint8_t COMMAND_DATA_TYPE{0x00};
+/// Data type of encoded set param command.
+constexpr uint8_t SET_PARAM_DATA_TYPE{0x01};
+/// Version of the library in the encoded data: major and minor numbers. Data
+/// with another version is rejected.
+constexpr uint8_t VERSION_MAJOR{CAMERA_MAJOR_VERSION};
+constexpr uint8_t VERSION_MINOR{CAMERA_MINOR_VERSION};
+/// Position of the major version in the encoded data. The minor version
+/// follows it.
+constexpr int VERSION_POS{1};
+
+/// Position of the mask in the encoded params: after data type and version.
+constexpr int PARAMS_MASK_POS{3};
+/// Size of the mask in the encoded params: one bit for each field.
+constexpr int PARAMS_MASK_SIZE{(static_cast<int>(FIELDS_NUMBER) + 7) / 8};
+/// Size of the encoded params header: data type, version and mask. It is the
+/// minimum size of the encoded params (no field is selected).
+constexpr int PARAMS_HEADER_SIZE{PARAMS_MASK_POS + PARAMS_MASK_SIZE};
+/// Maximum size of the encoded params (all fields are selected). The buffer
+/// of encode(...) must have at least this size.
+constexpr int PARAMS_MAX_SIZE{
+        PARAMS_HEADER_SIZE +
+        (static_cast<int>(FIELDS_NUMBER) - FLAGS_NUMBER) * VALUE_SIZE +
+        FLAGS_NUMBER * FLAG_SIZE};
+static_assert(PARAMS_MASK_SIZE == 8, "wrong size of params mask");
+static_assert(PARAMS_MAX_SIZE == 237, "wrong size of encoded params");
+
+/// Position of the command or param ID in the encoded command.
+constexpr int COMMAND_ID_POS{3};
+/// Position of the param value in the encoded set param command.
+constexpr int COMMAND_VALUE_POS{COMMAND_ID_POS + VALUE_SIZE};
+/// Size of the encoded action command: data type, version and command ID.
+constexpr int COMMAND_SIZE{COMMAND_VALUE_POS};
+/// Size of the encoded set param command: data type, version, param ID and
+/// param value.
+constexpr int SET_PARAM_COMMAND_SIZE{COMMAND_VALUE_POS + VALUE_SIZE};
+
+/// The first and the last command ID: the enum values are consecutive.
+constexpr int FIRST_COMMAND_ID{
+        static_cast<int>(cr::camera::CameraCommand::RESTART)};
+constexpr int LAST_COMMAND_ID{
+        static_cast<int>(cr::camera::CameraCommand::DEFREEZE)};
+/// The first and the last param ID: the enum values are consecutive.
+constexpr int FIRST_PARAM_ID{static_cast<int>(cr::camera::CameraParam::WIDTH)};
+constexpr int LAST_PARAM_ID{
+        static_cast<int>(cr::camera::CameraParam::CUSTOM_3)};
+static_assert(LAST_PARAM_ID - FIRST_PARAM_ID + 1 ==
+              static_cast<int>(FIELDS_NUMBER),
+              "CameraParam enum doesn't match CameraParams");
+
+/// Result of decodeCommand(...): error.
+constexpr int DECODE_ERROR{-1};
+/// Result of decodeCommand(...): action command decoded.
+constexpr int DECODED_COMMAND{0};
+/// Result of decodeCommand(...): set param command decoded.
+constexpr int DECODED_SET_PARAM{1};
+
+
+
+/// Location of a CameraParams field in the encoded data.
+struct FieldRef
+{
+    /// Pointer to the field of a CameraParams object.
+    void* value{nullptr};
+    /// Size of the field in the encoded data: VALUE_SIZE or FLAG_SIZE.
+    int size{0};
+};
+
+
+
+/// Get location of an int field.
+FieldRef makeField(int& value)
+{
+    return {&value, VALUE_SIZE};
 }
+
+
+
+/// Get location of a float field.
+FieldRef makeField(float& value)
+{
+    return {&value, VALUE_SIZE};
+}
+
+
+
+/// Get location of a bool field.
+FieldRef makeField(bool& value)
+{
+    return {&value, FLAG_SIZE};
+}
+
+
+
+/// Get the table of CameraParams fields in the order they are stored in the
+/// encoded data (the same order as the bits of the mask). The type of the
+/// table is deduced from the number of the fields: it is checked below.
+auto makeFieldTable(cr::camera::CameraParams& p)
+{
+    return std::array{
+        makeField(p.width), makeField(p.height), makeField(p.displayMode),
+        makeField(p.videoOutput), makeField(p.logMode),
+        makeField(p.exposureMode), makeField(p.exposureTime),
+        makeField(p.whiteBalanceMode), makeField(p.whiteBalanceArea),
+        makeField(p.wideDynamicRangeMode), makeField(p.stabilizationMode),
+        makeField(p.isoSensitivity), makeField(p.sceneMode), makeField(p.fps),
+        makeField(p.brightnessMode), makeField(p.brightness),
+        makeField(p.contrast), makeField(p.gainMode), makeField(p.gain),
+        makeField(p.sharpeningMode), makeField(p.sharpening),
+        makeField(p.palette), makeField(p.agcMode), makeField(p.shutterMode),
+        makeField(p.shutterPos), makeField(p.shutterSpeed),
+        makeField(p.digitalZoomMode), makeField(p.digitalZoom),
+        makeField(p.exposureCompensationMode),
+        makeField(p.exposureCompensationPosition), makeField(p.defogMode),
+        makeField(p.dehazeMode), makeField(p.noiseReductionMode),
+        makeField(p.blackAndWhiteFilterMode), makeField(p.filterMode),
+        makeField(p.nucMode), makeField(p.autoNucIntervalMsec),
+        makeField(p.imageFlip), makeField(p.ddeMode), makeField(p.ddeLevel),
+        makeField(p.roiX0), makeField(p.roiY0), makeField(p.roiX1),
+        makeField(p.roiY1), makeField(p.temperature), makeField(p.alcGate),
+        makeField(p.sensitivity), makeField(p.changingMode),
+        makeField(p.changingLevel), makeField(p.chromaLevel),
+        makeField(p.detail), makeField(p.profile), makeField(p.isConnected),
+        makeField(p.isOpen), makeField(p.type), makeField(p.custom1),
+        makeField(p.custom2), makeField(p.custom3)};
+}
+
+
+
+/// Get the table of mask flags in the same order as the table of fields.
+auto makeMaskTable(const cr::camera::CameraParamsMask& m)
+{
+    return std::array{
+        m.width, m.height, m.displayMode, m.videoOutput, m.logMode,
+        m.exposureMode, m.exposureTime, m.whiteBalanceMode,
+        m.whiteBalanceArea, m.wideDynamicRangeMode, m.stabilizationMode,
+        m.isoSensitivity, m.sceneMode, m.fps, m.brightnessMode, m.brightness,
+        m.contrast, m.gainMode, m.gain, m.sharpeningMode, m.sharpening,
+        m.palette, m.agcMode, m.shutterMode, m.shutterPos, m.shutterSpeed,
+        m.digitalZoomMode, m.digitalZoom, m.exposureCompensationMode,
+        m.exposureCompensationPosition, m.defogMode, m.dehazeMode,
+        m.noiseReductionMode, m.blackAndWhiteFilterMode, m.filterMode,
+        m.nucMode, m.autoNucIntervalMsec, m.imageFlip, m.ddeMode, m.ddeLevel,
+        m.roiX0, m.roiY0, m.roiX1, m.roiY1, m.temperature, m.alcGate,
+        m.sensitivity, m.changingMode, m.changingLevel, m.chromaLevel,
+        m.detail, m.profile, m.isConnected, m.isOpen, m.type, m.custom1,
+        m.custom2, m.custom3};
+}
+
+// Both tables must have one element for each field.
+static_assert(std::tuple_size<decltype(makeFieldTable(
+        std::declval<cr::camera::CameraParams&>()))>::value == FIELDS_NUMBER,
+        "wrong number of fields in the table of fields");
+static_assert(std::tuple_size<decltype(makeMaskTable(
+        std::declval<const cr::camera::CameraParamsMask&>()))>::value ==
+        FIELDS_NUMBER, "wrong number of flags in the table of mask flags");
+
+
+
+/// Get the position of the mask byte which holds the bit of a field.
+int maskBytePos(size_t fieldIndex)
+{
+    return PARAMS_MASK_POS + static_cast<int>(fieldIndex / 8);
+}
+
+
+
+/// Get the bit of a field inside the mask byte: the first field of a byte is
+/// the most significant bit.
+uint8_t maskBit(size_t fieldIndex)
+{
+    return static_cast<uint8_t>(0x80U >> (fieldIndex % 8));
+}
+
+
+
+/// Write the first bytes of the encoded data: data type and version.
+void writeHeader(uint8_t* data, uint8_t dataType)
+{
+    data[0] = dataType;
+    data[VERSION_POS] = VERSION_MAJOR;
+    data[VERSION_POS + 1] = VERSION_MINOR;
+}
+
+
+
+/// Check the version of the encoded data.
+bool isVersionValid(const uint8_t* data)
+{
+    return data[VERSION_POS] == VERSION_MAJOR &&
+           data[VERSION_POS + 1] == VERSION_MINOR;
+}
+}
+
+
+
+cr::camera::Camera::~Camera() = default;
 
 
 
@@ -17,411 +235,56 @@ std::string cr::camera::Camera::getVersion()
 
 
 
-cr::camera::CameraParams &cr::camera::CameraParams::operator= (const cr::camera::CameraParams &src)
-{
-    // Check yourself.
-    if (this == &src)
-        return *this;
-
-    // Copy params.
-    initString = src.initString;
-    width = src.width;
-    height = src.height;
-    displayMode = src.displayMode;
-    videoOutput = src.videoOutput;
-    logMode = src.logMode;
-    exposureMode = src.exposureMode;
-    exposureTime = src.exposureTime;
-    whiteBalanceMode = src.whiteBalanceMode;
-    whiteBalanceArea = src.whiteBalanceArea;
-    wideDynamicRangeMode = src.wideDynamicRangeMode;
-    stabilizationMode = src.stabilizationMode;
-    isoSensitivity = src.isoSensitivity;
-    sceneMode = src.sceneMode;
-    fps = src.fps;
-    brightnessMode = src.brightnessMode;
-    brightness = src.brightness;
-    contrast = src.contrast;
-    gainMode = src.gainMode;
-    gain = src.gain;
-    sharpeningMode = src.sharpeningMode;
-    sharpening = src.sharpening;
-    palette = src.palette;
-    agcMode = src.agcMode;
-    shutterMode = src.shutterMode;
-    shutterPos = src.shutterPos;
-    shutterSpeed = src.shutterSpeed;
-    digitalZoomMode = src.digitalZoomMode;
-    digitalZoom = src.digitalZoom;
-    exposureCompensationMode = src.exposureCompensationMode;
-    exposureCompensationPosition = src.exposureCompensationPosition;
-    defogMode = src.defogMode;
-    dehazeMode = src.dehazeMode;
-    noiseReductionMode = src.noiseReductionMode;
-    blackAndWhiteFilterMode = src.blackAndWhiteFilterMode;
-    filterMode = src.filterMode;
-    nucMode = src.nucMode;
-    autoNucIntervalMsec = src.autoNucIntervalMsec;
-    imageFlip = src.imageFlip;
-    ddeMode = src.ddeMode;
-    ddeLevel = src.ddeLevel;
-    roiX0 = src.roiX0;
-    roiY0 = src.roiY0;
-    roiX1 = src.roiX1;
-    roiY1 = src.roiY1;
-    temperature = src.temperature;
-    alcGate = src.alcGate;
-    sensitivity = src.sensitivity;
-    changingMode = src.changingMode;
-    changingLevel = src.changingLevel;
-    chromaLevel = src.chromaLevel;
-    detail = src.detail;
-    profile = src.profile;
-    isConnected = src.isConnected;
-    isOpen = src.isOpen;
-    type = src.type;
-    custom1 = src.custom1;
-    custom2 = src.custom2;
-    custom3 = src.custom3;
-
-    return *this;
-}
-
-
-
 bool cr::camera::CameraParams::encode(
-    uint8_t* data, int bufferSize, int& size, CameraParamsMask* mask)
+        uint8_t* data, int bufferSize, int& size, CameraParamsMask* mask)
 {
-    // Check buffer size.
-    if (bufferSize < 237)
+    // Nothing is encoded until the arguments are checked.
+    size = 0;
+
+    // Check the pointer and the size of the buffer: all fields must fit.
+    if (data == nullptr || bufferSize < PARAMS_MAX_SIZE)
+    {
         return false;
-
-    // Encode version.
-    int pos = 0;
-    data[pos] = 0x02; pos += 1;
-    data[pos] = CAMERA_MAJOR_VERSION; pos += 1;
-    data[pos] = CAMERA_MINOR_VERSION; pos += 1;
-
-    // Default parameters mask.
-    CameraParamsMask defaultMask;
-    if (mask == nullptr)
-        mask = &defaultMask;
-
-    // Prepare mask.
-    data[pos] = 0;
-    data[pos] = data[pos] | (mask->width ? (uint8_t)128 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->height ? (uint8_t)64 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->displayMode ? (uint8_t)32 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->videoOutput ? (uint8_t)16 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->logMode ? (uint8_t)8 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->exposureMode ? (uint8_t)4 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->exposureTime ? (uint8_t)2 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->whiteBalanceMode ? (uint8_t)1 : (uint8_t)0);
-    pos += 1;
-    data[pos] = 0;
-    data[pos] = data[pos] | (mask->whiteBalanceArea ? (uint8_t)128 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->wideDynamicRangeMode ? (uint8_t)64 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->stabilizationMode ? (uint8_t)32 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->isoSensitivity ? (uint8_t)16 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->sceneMode ? (uint8_t)8 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->fps ? (uint8_t)4 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->brightnessMode ? (uint8_t)2 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->brightness ? (uint8_t)1 : (uint8_t)0);
-    pos += 1;
-    data[pos] = 0;
-    data[pos] = data[pos] | (mask->contrast ? (uint8_t)128 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->gainMode ? (uint8_t)64 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->gain ? (uint8_t)32 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->sharpeningMode ? (uint8_t)16 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->sharpening ? (uint8_t)8 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->palette ? (uint8_t)4 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->agcMode ? (uint8_t)2 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->shutterMode ? (uint8_t)1 : (uint8_t)0);
-    pos += 1;
-    data[pos] = 0;
-    data[pos] = data[pos] | (mask->shutterPos ? (uint8_t)128 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->shutterSpeed ? (uint8_t)64 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->digitalZoomMode ? (uint8_t)32 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->digitalZoom ? (uint8_t)16 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->exposureCompensationMode ? (uint8_t)8 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->exposureCompensationPosition ? (uint8_t)4 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->defogMode ? (uint8_t)2 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->dehazeMode ? (uint8_t)1 : (uint8_t)0);
-    pos += 1;
-    data[pos] = 0;
-    data[pos] = data[pos] | (mask->noiseReductionMode ? (uint8_t)128 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->blackAndWhiteFilterMode ? (uint8_t)64 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->filterMode ? (uint8_t)32 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->nucMode ? (uint8_t)16 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->autoNucIntervalMsec ? (uint8_t)8 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->imageFlip ? (uint8_t)4 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->ddeMode ? (uint8_t)2 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->ddeLevel ? (uint8_t)1 : (uint8_t)0);
-    pos += 1;
-    data[pos] = 0;
-    data[pos] = data[pos] | (mask->roiX0 ? (uint8_t)128 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->roiY0 ? (uint8_t)64 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->roiX1 ? (uint8_t)32 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->roiY1 ? (uint8_t)16 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->temperature ? (uint8_t)8 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->alcGate ? (uint8_t)4 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->sensitivity ? (uint8_t)2 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->changingMode ? (uint8_t)1 : (uint8_t)0);
-    pos += 1;
-    data[pos] = 0;
-    data[pos] = data[pos] | (mask->changingLevel ? (uint8_t)128 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->chromaLevel ? (uint8_t)64 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->detail ? (uint8_t)32 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->profile ? (uint8_t)16 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->isConnected ? (uint8_t)8 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->isOpen ? (uint8_t)4 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->type ? (uint8_t)2 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->custom1 ? (uint8_t)1 : (uint8_t)0);
-    pos += 1;
-    data[pos] = 0;
-    data[pos] = data[pos] | (mask->custom2 ? (uint8_t)128 : (uint8_t)0);
-    data[pos] = data[pos] | (mask->custom3 ? (uint8_t)64 : (uint8_t)0);
-    pos += 1;
-
-    // Encode data.
-    if (mask->width)
-    {
-        memcpy(&data[pos], &width, 4); pos += 4;
-    }
-    if (mask->height)
-    {
-        memcpy(&data[pos], &height, 4); pos += 4;
-    }
-    if (mask->displayMode)
-    {
-        memcpy(&data[pos], &displayMode, 4); pos += 4;
-    }
-    if (mask->videoOutput)
-    {
-        memcpy(&data[pos], &videoOutput, 4); pos += 4;
-    }
-    if (mask->logMode)
-    {
-        memcpy(&data[pos], &logMode, 4); pos += 4;
-    }
-    if (mask->exposureMode)
-    {
-        memcpy(&data[pos], &exposureMode, 4); pos += 4;
-    }
-    if (mask->exposureTime)
-    {
-        memcpy(&data[pos], &exposureTime, 4); pos += 4;
-    }
-    if (mask->whiteBalanceMode)
-    {
-        memcpy(&data[pos], &whiteBalanceMode, 4); pos += 4;
     }
 
-    if (mask->whiteBalanceArea)
+    // Default parameters mask: all fields are selected.
+    const CameraParamsMask defaultMask;
+    const CameraParamsMask& selected = (mask != nullptr) ? *mask : defaultMask;
+
+    // Encode the header: data type, version and the mask.
+    writeHeader(data, PARAMS_DATA_TYPE);
+    std::memset(&data[PARAMS_MASK_POS], 0,
+                static_cast<size_t>(PARAMS_MASK_SIZE));
+    const auto flags = makeMaskTable(selected);
+    for (size_t i = 0; i < FIELDS_NUMBER; ++i)
     {
-        memcpy(&data[pos], &whiteBalanceArea, 4); pos += 4;
-    }
-    if (mask->wideDynamicRangeMode)
-    {
-        memcpy(&data[pos], &wideDynamicRangeMode, 4); pos += 4;
-    }
-    if (mask->stabilizationMode)
-    {
-        memcpy(&data[pos], &stabilizationMode, 4); pos += 4;
-    }
-    if (mask->isoSensitivity)
-    {
-        memcpy(&data[pos], &isoSensitivity, 4); pos += 4;
-    }
-    if (mask->sceneMode)
-    {
-        memcpy(&data[pos], &sceneMode, 4); pos += 4;
-    }
-    if (mask->fps)
-    {
-        memcpy(&data[pos], &fps, 4); pos += 4;
-    }
-    if (mask->brightnessMode)
-    {
-        memcpy(&data[pos], &brightnessMode, 4); pos += 4;
-    }
-    if (mask->brightness)
-    {
-        memcpy(&data[pos], &brightness, 4); pos += 4;
+        if (flags[i])
+        {
+            const int pos = maskBytePos(i);
+            data[pos] = static_cast<uint8_t>(data[pos] | maskBit(i));
+        }
     }
 
-    if (mask->contrast)
+    // Encode the values of the selected fields.
+    const auto fields = makeFieldTable(*this);
+    int pos = PARAMS_HEADER_SIZE;
+    for (size_t i = 0; i < FIELDS_NUMBER; ++i)
     {
-        memcpy(&data[pos], &contrast, 4); pos += 4;
-    }
-    if (mask->gainMode)
-    {
-        memcpy(&data[pos], &gainMode, 4); pos += 4;
-    }
-    if (mask->gain)
-    {
-        memcpy(&data[pos], &gain, 4); pos += 4;
-    }
-    if (mask->sharpeningMode)
-    {
-        memcpy(&data[pos], &sharpeningMode, 4); pos += 4;
-    }
-    if (mask->sharpening)
-    {
-        memcpy(&data[pos], &sharpening, 4); pos += 4;
-    }
-    if (mask->palette)
-    {
-        memcpy(&data[pos], &palette, 4); pos += 4;
-    }
-    if (mask->agcMode)
-    {
-        memcpy(&data[pos], &agcMode, 4); pos += 4;
-    }
-    if (mask->shutterMode)
-    {
-        memcpy(&data[pos], &shutterMode, 4); pos += 4;
-    }
-
-    if (mask->shutterPos)
-    {
-        memcpy(&data[pos], &shutterPos, 4); pos += 4;
-    }
-    if (mask->shutterSpeed)
-    {
-        memcpy(&data[pos], &shutterSpeed, 4); pos += 4;
-    }
-    if (mask->digitalZoomMode)
-    {
-        memcpy(&data[pos], &digitalZoomMode, 4); pos += 4;
-    }
-    if (mask->digitalZoom)
-    {
-        memcpy(&data[pos], &digitalZoom, 4); pos += 4;
-    }
-    if (mask->exposureCompensationMode)
-    {
-        memcpy(&data[pos], &exposureCompensationMode, 4); pos += 4;
-    }
-    if (mask->exposureCompensationPosition)
-    {
-        memcpy(&data[pos], &exposureCompensationPosition, 4); pos += 4;
-    }
-    if (mask->defogMode)
-    {
-        memcpy(&data[pos], &defogMode, 4); pos += 4;
-    }
-    if (mask->dehazeMode)
-    {
-        memcpy(&data[pos], &dehazeMode, 4); pos += 4;
-    }
-
-    if (mask->noiseReductionMode)
-    {
-        memcpy(&data[pos], &noiseReductionMode, 4); pos += 4;
-    }
-    if (mask->blackAndWhiteFilterMode)
-    {
-        memcpy(&data[pos], &blackAndWhiteFilterMode, 4); pos += 4;
-    }
-    if (mask->filterMode)
-    {
-        memcpy(&data[pos], &filterMode, 4); pos += 4;
-    }
-    if (mask->nucMode)
-    {
-        memcpy(&data[pos], &nucMode, 4); pos += 4;
-    }
-    if (mask->autoNucIntervalMsec)
-    {
-        memcpy(&data[pos], &autoNucIntervalMsec, 4); pos += 4;
-    }
-    if (mask->imageFlip)
-    {
-        memcpy(&data[pos], &imageFlip, 4); pos += 4;
-    }
-    if (mask->ddeMode)
-    {
-        memcpy(&data[pos], &ddeMode, 4); pos += 4;
-    }
-    if (mask->ddeLevel)
-    {
-        memcpy(&data[pos], &ddeLevel, 4); pos += 4;
-    }
-
-    if (mask->roiX0)
-    {
-        memcpy(&data[pos], &roiX0, 4); pos += 4;
-    }
-    if (mask->roiY0)
-    {
-        memcpy(&data[pos], &roiY0, 4); pos += 4;
-    }
-    if (mask->roiX1)
-    {
-        memcpy(&data[pos], &roiX1, 4); pos += 4;
-    }
-    if (mask->roiY1)
-    {
-        memcpy(&data[pos], &roiY1, 4); pos += 4;
-    }
-    if (mask->temperature)
-    {
-        memcpy(&data[pos], &temperature, 4); pos += 4;
-    }
-    if (mask->alcGate)
-    {
-        memcpy(&data[pos], &alcGate, 4); pos += 4;
-    }
-    if (mask->sensitivity)
-    {
-        memcpy(&data[pos], &sensitivity, 4); pos += 4;
-    }
-    if (mask->changingMode)
-    {
-        memcpy(&data[pos], &changingMode, 4); pos += 4;
-    }
-
-    if (mask->changingLevel)
-    {
-        memcpy(&data[pos], &changingLevel, 4); pos += 4;
-    }
-    if (mask->chromaLevel)
-    {
-        memcpy(&data[pos], &chromaLevel, 4); pos += 4;
-    }
-    if (mask->detail)
-    {
-        memcpy(&data[pos], &detail, 4); pos += 4;
-    }
-    if (mask->profile)
-    {
-        memcpy(&data[pos], &profile, 4); pos += 4;
-    }
-    if (mask->isConnected)
-    {
-        data[pos] = isConnected == true ? 0x01 : 0x00; pos += 1;
-    }
-    if (mask->isOpen)
-    {
-        data[pos] = isOpen == true ? 0x01 : 0x00; pos += 1;
-    }
-    if (mask->type)
-    {
-        memcpy(&data[pos], &type, 4); pos += 4;
-    }
-    if (mask->custom1)
-    {
-        memcpy(&data[pos], &custom1, 4); pos += 4;
-    }
-
-    if (mask->custom2)
-    {
-        memcpy(&data[pos], &custom2, 4); pos += 4;
-    }
-    if (mask->custom3)
-    {
-        memcpy(&data[pos], &custom3, 4); pos += 4;
+        if (!flags[i])
+        {
+            continue;
+        }
+        if (fields[i].size == FLAG_SIZE)
+        {
+            data[pos] = *static_cast<const bool*>(fields[i].value) ?
+                        uint8_t{0x01} : uint8_t{0x00};
+        }
+        else
+        {
+            std::memcpy(&data[pos], fields[i].value,
+                        static_cast<size_t>(fields[i].size));
+        }
+        pos += fields[i].size;
     }
 
     size = pos;
@@ -433,624 +296,53 @@ bool cr::camera::CameraParams::encode(
 
 bool cr::camera::CameraParams::decode(uint8_t* data, int dataSize)
 {
-    // Check data size.
-    if (dataSize < 12)
+    // Check the pointer and the size of the data: the header must be complete.
+    if (data == nullptr || dataSize < PARAMS_HEADER_SIZE)
+    {
         return false;
+    }
 
-    // Check header.
-    if (data[0] != 0x02)
+    // Check the data type and the version.
+    if (data[0] != PARAMS_DATA_TYPE || !isVersionValid(data))
+    {
         return false;
-
-    // Check version.
-    if (data[1] != CAMERA_MAJOR_VERSION ||
-        data[2] != CAMERA_MINOR_VERSION)
-        return false;
-
-    // Decode data.
-    int pos = 11;
-
-    if ((data[3] & (uint8_t)128) == (uint8_t)128)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&width, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        width = 0;
-    }
-    if ((data[3] & (uint8_t)64) == (uint8_t)64)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&height, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        height = 0;
-    }
-    if ((data[3] & (uint8_t)32) == (uint8_t)32)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&displayMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        displayMode = 0;
-    }
-    if ((data[3] & (uint8_t)16) == (uint8_t)16)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&videoOutput, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        videoOutput = 0;
-    }
-    if ((data[3] & (uint8_t)8) == (uint8_t)8)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&logMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        logMode = 0;
-    }
-    if ((data[3] & (uint8_t)4) == (uint8_t)4)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&exposureMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        exposureMode = 0;
-    }
-    if ((data[3] & (uint8_t)2) == (uint8_t)2)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&exposureTime, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        exposureTime = 0;
-    }
-    if ((data[3] & (uint8_t)1) == (uint8_t)1)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&whiteBalanceMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        whiteBalanceMode = 0;
     }
 
+    // Decode into a temporary object: this object is changed only if the
+    // whole data is valid. Fields which are not selected by the mask are set
+    // to zero, initString is empty.
+    CameraParams result;
+    result.initString.clear();
+    const auto fields = makeFieldTable(result);
+    int pos = PARAMS_HEADER_SIZE;
+    for (size_t i = 0; i < FIELDS_NUMBER; ++i)
+    {
+        const FieldRef& field = fields[i];
+        const bool encoded = (data[maskBytePos(i)] & maskBit(i)) != 0;
+        if (!encoded)
+        {
+            std::memset(field.value, 0, static_cast<size_t>(field.size));
+            continue;
+        }
 
-
-    if ((data[4] & (uint8_t)128) == (uint8_t)128)
-    {
-        if (dataSize < pos + 4)
+        // Check that the field is inside the data.
+        if (dataSize - pos < field.size)
+        {
             return false;
-        memcpy(&whiteBalanceArea, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        whiteBalanceArea = 0;
-    }
-    if ((data[4] & (uint8_t)64) == (uint8_t)64)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&wideDynamicRangeMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        wideDynamicRangeMode = 0;
-    }
-    if ((data[4] & (uint8_t)32) == (uint8_t)32)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&stabilizationMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        stabilizationMode = 0;
-    }
-    if ((data[4] & (uint8_t)16) == (uint8_t)16)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&isoSensitivity, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        isoSensitivity = 0;
-    }
-    if ((data[4] & (uint8_t)8) == (uint8_t)8)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&sceneMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        sceneMode = 0;
-    }
-    if ((data[4] & (uint8_t)4) == (uint8_t)4)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&fps, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        fps = 0.0f;
-    }
-    if ((data[4] & (uint8_t)2) == (uint8_t)2)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&brightnessMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        brightnessMode = 0;
-    }
-    if ((data[4] & (uint8_t)1) == (uint8_t)1)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&brightness, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        brightness = 0;
+        }
+        if (field.size == FLAG_SIZE)
+        {
+            *static_cast<bool*>(field.value) = data[pos] != 0x00;
+        }
+        else
+        {
+            std::memcpy(field.value, &data[pos],
+                        static_cast<size_t>(field.size));
+        }
+        pos += field.size;
     }
 
-
-
-    if ((data[5] & (uint8_t)128) == (uint8_t)128)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&contrast, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        contrast = 0;
-    }
-    if ((data[5] & (uint8_t)64) == (uint8_t)64)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&gainMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        gainMode = 0;
-    }
-    if ((data[5] & (uint8_t)32) == (uint8_t)32)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&gain, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        gain = 0;
-    }
-    if ((data[5] & (uint8_t)16) == (uint8_t)16)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&sharpeningMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        sharpeningMode = 0;
-    }
-    if ((data[5] & (uint8_t)8) == (uint8_t)8)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&sharpening, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        sharpening = 0;
-    }
-    if ((data[5] & (uint8_t)4) == (uint8_t)4)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&palette, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        palette = 0;
-    }
-    if ((data[5] & (uint8_t)2) == (uint8_t)2)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&agcMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        agcMode = 0;
-    }
-    if ((data[5] & (uint8_t)1) == (uint8_t)1)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&shutterMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        shutterMode = 0;
-    }
-
-
-    if ((data[6] & (uint8_t)128) == (uint8_t)128)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&shutterPos, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        shutterPos = 0;
-    }
-    if ((data[6] & (uint8_t)64) == (uint8_t)64)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&shutterSpeed, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        shutterSpeed = 0;
-    }
-    if ((data[6] & (uint8_t)32) == (uint8_t)32)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&digitalZoomMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        digitalZoomMode = 0;
-    }
-    if ((data[6] & (uint8_t)16) == (uint8_t)16)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&digitalZoom, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        digitalZoom = 0.0f;
-    }
-    if ((data[6] & (uint8_t)8) == (uint8_t)8)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&exposureCompensationMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        exposureCompensationMode = 0;
-    }
-    if ((data[6] & (uint8_t)4) == (uint8_t)4)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&exposureCompensationPosition, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        exposureCompensationPosition = 0;
-    }
-    if ((data[6] & (uint8_t)2) == (uint8_t)2)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&defogMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        defogMode = 0;
-    }
-    if ((data[6] & (uint8_t)1) == (uint8_t)1)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&dehazeMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        dehazeMode = 0;
-    }
-
-
-
-    if ((data[7] & (uint8_t)128) == (uint8_t)128)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&noiseReductionMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        noiseReductionMode = 0;
-    }
-    if ((data[7] & (uint8_t)64) == (uint8_t)64)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&blackAndWhiteFilterMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        blackAndWhiteFilterMode = 0;
-    }
-    if ((data[7] & (uint8_t)32) == (uint8_t)32)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&filterMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        filterMode = 0;
-    }
-    if ((data[7] & (uint8_t)16) == (uint8_t)16)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&nucMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        nucMode = 0;
-    }
-    if ((data[7] & (uint8_t)8) == (uint8_t)8)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&autoNucIntervalMsec, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        autoNucIntervalMsec = 0;
-    }
-    if ((data[7] & (uint8_t)4) == (uint8_t)4)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&imageFlip, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        imageFlip = 0;
-    }
-    if ((data[7] & (uint8_t)2) == (uint8_t)2)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&ddeMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        ddeMode = 0;
-    }
-    if ((data[7] & (uint8_t)1) == (uint8_t)1)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&ddeLevel, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        ddeLevel = 0.0f;
-    }
-
-
-
-    if ((data[8] & (uint8_t)128) == (uint8_t)128)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&roiX0, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        roiX0 = 0;
-    }
-    if ((data[8] & (uint8_t)64) == (uint8_t)64)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&roiY0, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        roiY0 = 0;
-    }
-    if ((data[8] & (uint8_t)32) == (uint8_t)32)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&roiX1, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        roiX1 = 0;
-    }
-    if ((data[8] & (uint8_t)16) == (uint8_t)16)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&roiY1, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        roiY1 = 0;
-    }
-    if ((data[8] & (uint8_t)8) == (uint8_t)8)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&temperature, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        temperature = 0.0f;
-    }
-    if ((data[8] & (uint8_t)4) == (uint8_t)4)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&alcGate, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        alcGate = 0;
-    }
-    if ((data[8] & (uint8_t)2) == (uint8_t)2)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&sensitivity, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        sensitivity = 0;
-    }
-    if ((data[8] & (uint8_t)1) == (uint8_t)1)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&changingMode, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        changingMode = 0;
-    }
-
-
-
-    if ((data[9] & (uint8_t)128) == (uint8_t)128)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&changingLevel, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        changingLevel = 0.0f;
-    }
-    if ((data[9] & (uint8_t)64) == (uint8_t)64)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&chromaLevel, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        chromaLevel = 0;
-    }
-    if ((data[9] & (uint8_t)32) == (uint8_t)32)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&detail, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        detail = 0;
-    }
-    if ((data[9] & (uint8_t)16) == (uint8_t)16)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&profile, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        profile = 0;
-    }
-    if ((data[9] & (uint8_t)8) == (uint8_t)8)
-    {
-        if (dataSize < pos + 1)
-            return false;
-        isConnected = data[pos] == 0x00 ? false : true; pos += 1;
-    }
-    else
-    {
-        isConnected = false;
-    }
-    if ((data[9] & (uint8_t)4) == (uint8_t)4)
-    {
-        if (dataSize < pos + 1)
-            return false;
-        isOpen = data[pos] == 0x00 ? false : true; pos += 1;
-    }
-    else
-    {
-        isOpen = false;
-    }
-    if ((data[9] & (uint8_t)2) == (uint8_t)2)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&type, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        type = 0;
-    }
-    if ((data[9] & (uint8_t)1) == (uint8_t)1)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&custom1, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        custom1 = 0.0f;
-    }
-
-
-
-    if ((data[10] & (uint8_t)128) == (uint8_t)128)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&custom2, &data[pos], 4); pos += 4;
-    }
-    else
-    {
-        custom2 = 0.0f;
-    }
-    if ((data[10] & (uint8_t)64) == (uint8_t)64)
-    {
-        if (dataSize < pos + 4)
-            return false;
-        memcpy(&custom3, &data[pos], 4);
-    }
-    else
-    {
-        custom3 = 0.0f;
-    }
-
-    initString = "";
+    *this = result;
 
     return true;
 }
@@ -1060,33 +352,38 @@ bool cr::camera::CameraParams::decode(uint8_t* data, int dataSize)
 void cr::camera::Camera::encodeSetParamCommand(
         uint8_t* data, int& size, CameraParam id, float value)
 {
-    // Fill header.
-    data[0] = 0x01;
-    data[1] = CAMERA_MAJOR_VERSION;
-    data[2] = CAMERA_MINOR_VERSION;
+    // Nothing is encoded without a buffer.
+    if (data == nullptr)
+    {
+        size = 0;
+        return;
+    }
 
-    // Fill data.
-    int paramId = (int)id;
-    memcpy(&data[3], &paramId, 4);
-    memcpy(&data[7], &value, 4);
-    size = 11;
+    // Fill header and data.
+    writeHeader(data, SET_PARAM_DATA_TYPE);
+    const int paramId = static_cast<int>(id);
+    std::memcpy(&data[COMMAND_ID_POS], &paramId, sizeof(paramId));
+    std::memcpy(&data[COMMAND_VALUE_POS], &value, sizeof(value));
+    size = SET_PARAM_COMMAND_SIZE;
 }
 
 
 
-void cr::camera::Camera::encodeCommand(uint8_t* data,
-                                   int& size,
-                                   cr::camera::CameraCommand id)
+void cr::camera::Camera::encodeCommand(
+        uint8_t* data, int& size, cr::camera::CameraCommand id)
 {
-    // Fill header.
-    data[0] = 0x00;
-    data[1] = CAMERA_MAJOR_VERSION;
-    data[2] = CAMERA_MINOR_VERSION;
+    // Nothing is encoded without a buffer.
+    if (data == nullptr)
+    {
+        size = 0;
+        return;
+    }
 
-    // Fill data.
-    int commandId = (int)id;
-    memcpy(&data[3], &commandId, 4);
-    size = 7;
+    // Fill header and data.
+    writeHeader(data, COMMAND_DATA_TYPE);
+    const int commandId = static_cast<int>(id);
+    std::memcpy(&data[COMMAND_ID_POS], &commandId, sizeof(commandId));
+    size = COMMAND_SIZE;
 }
 
 
@@ -1097,35 +394,44 @@ int cr::camera::Camera::decodeCommand(uint8_t* data,
                                       cr::camera::CameraCommand& commandId,
                                       float& value)
 {
-    // Check size.
-    if (size < 7)
-        return -1;
+    // Check the pointer, the size (both commands have at least this size) and
+    // the version.
+    if (data == nullptr || size < COMMAND_SIZE || !isVersionValid(data))
+    {
+        return DECODE_ERROR;
+    }
 
-    // Check version.
-    if (data[1] != CAMERA_MAJOR_VERSION || data[2] != CAMERA_MINOR_VERSION)
-        return -1;
-
-    // Extract data.
+    // Extract the ID. An ID which is outside of the enum is an error: it is
+    // not passed to the camera controller. The output arguments are changed
+    // only after all checks.
     int id = 0;
-    memcpy(&id, &data[3], 4);
-    value = 0.0f;
+    std::memcpy(&id, &data[COMMAND_ID_POS], sizeof(id));
 
-    // Check command type.
-    if (data[0] == 0x00)
+    // Action command: the size must be exact.
+    if (data[0] == COMMAND_DATA_TYPE)
     {
-        commandId = (CameraCommand)id;
-        return 0;
-    }
-    else if (data[0] == 0x01)
-    {
-        // Check size.
-        if (size != 11)
-            return false;
-
-        paramId = (CameraParam)id;
-        memcpy(&value, &data[7], 4);
-        return 1;
+        if (size != COMMAND_SIZE ||
+            id < FIRST_COMMAND_ID || id > LAST_COMMAND_ID)
+        {
+            return DECODE_ERROR;
+        }
+        commandId = static_cast<CameraCommand>(id);
+        value = 0.0f;
+        return DECODED_COMMAND;
     }
 
-    return -1;
+    // Set param command: the size must be exact.
+    if (data[0] == SET_PARAM_DATA_TYPE)
+    {
+        if (size != SET_PARAM_COMMAND_SIZE ||
+            id < FIRST_PARAM_ID || id > LAST_PARAM_ID)
+        {
+            return DECODE_ERROR;
+        }
+        paramId = static_cast<CameraParam>(id);
+        std::memcpy(&value, &data[COMMAND_VALUE_POS], sizeof(value));
+        return DECODED_SET_PARAM;
+    }
+
+    return DECODE_ERROR;
 }

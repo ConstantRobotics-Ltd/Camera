@@ -1,5 +1,270 @@
 #include "CustomCamera.h"
+#include "Camera.h"
 #include "CustomCameraVersion.h"
+#include <array>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <limits>
+#include <mutex>
+#include <string>
+#include <utility>
+
+
+
+namespace
+{
+using cr::camera::CameraParam;
+using cr::camera::CameraParams;
+
+/// Maximum size of the init string, bytes. The init string is stored in the
+/// params only, so the limit protects the memory of the example.
+constexpr size_t MAX_INIT_STRING_SIZE{256};
+/// Limit of float values which can be converted to int. 2^31 is exactly
+/// representable as float, so (-LIMIT <= value < LIMIT) is the exact range
+/// of int.
+constexpr float INT_RANGE_LIMIT{2147483648.0f};
+/// Maximum video frame width and height, pixels.
+constexpr int MAX_FRAME_SIZE{16384};
+/// Maximum value of the params in percents.
+constexpr int MAX_PERCENT{100};
+/// Maximum shutter position (full open).
+constexpr int MAX_SHUTTER_POSITION{65535};
+/// Maximum auto NUC interval, milliseconds.
+constexpr int MAX_AUTO_NUC_INTERVAL_MSEC{100000};
+/// Minimum digital zoom (x1).
+constexpr float MIN_DIGITAL_ZOOM{1.0f};
+/// Maximum digital zoom (x20).
+constexpr float MAX_DIGITAL_ZOOM{20.0f};
+/// Number of int params which can be changed by setParam(...).
+constexpr size_t INT_PARAMS_NUMBER{47};
+/// Number of float params which can be changed by setParam(...).
+constexpr size_t FLOAT_PARAMS_NUMBER{8};
+
+
+
+/// Description of an int param: the field of CameraParams and the valid range
+/// of the value.
+struct IntParam
+{
+    /// Param ID.
+    CameraParam id;
+    /// Field of CameraParams which stores the param.
+    int CameraParams::* field;
+    /// Minimum value of the param.
+    int minValue;
+    /// Maximum value of the param.
+    int maxValue;
+};
+
+
+
+/// Description of a float param: the field of CameraParams and the valid range
+/// of the value.
+struct FloatParam
+{
+    /// Param ID.
+    CameraParam id;
+    /// Field of CameraParams which stores the param.
+    float CameraParams::* field;
+    /// Minimum value of the param.
+    float minValue;
+    /// Maximum value of the param.
+    float maxValue;
+};
+
+
+
+/// Get the description of an int param. The range is not limited by default.
+constexpr IntParam makeIntParam(
+        CameraParam id, int CameraParams::* field,
+        int minValue = std::numeric_limits<int>::min(),
+        int maxValue = std::numeric_limits<int>::max())
+{
+    return {id, field, minValue, maxValue};
+}
+
+
+
+/// Get the description of a float param. The range is not limited by default.
+constexpr FloatParam makeFloatParam(
+        CameraParam id, float CameraParams::* field,
+        float minValue = std::numeric_limits<float>::lowest(),
+        float maxValue = std::numeric_limits<float>::max())
+{
+    return {id, field, minValue, maxValue};
+}
+
+
+
+/// Int params. Temperature, isConnected and isOpen are read only: they are not
+/// in the tables.
+constexpr std::array INT_PARAMS{
+    makeIntParam(CameraParam::WIDTH, &CameraParams::width, 0,
+                 MAX_FRAME_SIZE),
+    makeIntParam(CameraParam::HEIGHT, &CameraParams::height, 0,
+                 MAX_FRAME_SIZE),
+    makeIntParam(CameraParam::DISPLAY_MODE, &CameraParams::displayMode),
+    makeIntParam(CameraParam::VIDEO_OUTPUT, &CameraParams::videoOutput),
+    makeIntParam(CameraParam::LOG_MODE, &CameraParams::logMode),
+    makeIntParam(CameraParam::EXPOSURE_MODE, &CameraParams::exposureMode),
+    makeIntParam(CameraParam::EXPOSURE_TIME, &CameraParams::exposureTime),
+    makeIntParam(CameraParam::WHITE_BALANCE_MODE,
+                 &CameraParams::whiteBalanceMode),
+    makeIntParam(CameraParam::WHITE_BALANCE_AREA,
+                 &CameraParams::whiteBalanceArea),
+    makeIntParam(CameraParam::WIDE_DYNAMIC_RANGE_MODE,
+                 &CameraParams::wideDynamicRangeMode),
+    makeIntParam(CameraParam::STABILIZATION_MODE,
+                 &CameraParams::stabilizationMode),
+    makeIntParam(CameraParam::ISO_SENSITIVITY, &CameraParams::isoSensitivity),
+    makeIntParam(CameraParam::SCENE_MODE, &CameraParams::sceneMode),
+    makeIntParam(CameraParam::BRIGHTNESS_MODE, &CameraParams::brightnessMode),
+    makeIntParam(CameraParam::BRIGHTNESS, &CameraParams::brightness, 0,
+                 MAX_PERCENT),
+    makeIntParam(CameraParam::CONTRAST, &CameraParams::contrast, 0,
+                 MAX_PERCENT),
+    makeIntParam(CameraParam::GAIN_MODE, &CameraParams::gainMode),
+    makeIntParam(CameraParam::GAIN, &CameraParams::gain, 0, MAX_PERCENT),
+    makeIntParam(CameraParam::SHARPENING_MODE, &CameraParams::sharpeningMode),
+    makeIntParam(CameraParam::SHARPENING, &CameraParams::sharpening, 0,
+                 MAX_PERCENT),
+    makeIntParam(CameraParam::PALETTE, &CameraParams::palette),
+    makeIntParam(CameraParam::AGC_MODE, &CameraParams::agcMode),
+    makeIntParam(CameraParam::SHUTTER_MODE, &CameraParams::shutterMode),
+    makeIntParam(CameraParam::SHUTTER_POSITION, &CameraParams::shutterPos, 0,
+                 MAX_SHUTTER_POSITION),
+    makeIntParam(CameraParam::SHUTTER_SPEED, &CameraParams::shutterSpeed, 0,
+                 MAX_PERCENT),
+    makeIntParam(CameraParam::DIGITAL_ZOOM_MODE,
+                 &CameraParams::digitalZoomMode),
+    makeIntParam(CameraParam::EXPOSURE_COMPENSATION_MODE,
+                 &CameraParams::exposureCompensationMode),
+    makeIntParam(CameraParam::EXPOSURE_COMPENSATION_POSITION,
+                 &CameraParams::exposureCompensationPosition),
+    makeIntParam(CameraParam::DEFOG_MODE, &CameraParams::defogMode),
+    makeIntParam(CameraParam::DEHAZE_MODE, &CameraParams::dehazeMode),
+    makeIntParam(CameraParam::NOISE_REDUCTION_MODE,
+                 &CameraParams::noiseReductionMode),
+    makeIntParam(CameraParam::BLACK_WHITE_FILTER_MODE,
+                 &CameraParams::blackAndWhiteFilterMode),
+    makeIntParam(CameraParam::FILTER_MODE, &CameraParams::filterMode),
+    makeIntParam(CameraParam::NUC_MODE, &CameraParams::nucMode),
+    makeIntParam(CameraParam::AUTO_NUC_INTERVAL_MSEC,
+                 &CameraParams::autoNucIntervalMsec, 0,
+                 MAX_AUTO_NUC_INTERVAL_MSEC),
+    makeIntParam(CameraParam::IMAGE_FLIP, &CameraParams::imageFlip),
+    makeIntParam(CameraParam::DDE_MODE, &CameraParams::ddeMode),
+    makeIntParam(CameraParam::ROI_X0, &CameraParams::roiX0),
+    makeIntParam(CameraParam::ROI_Y0, &CameraParams::roiY0),
+    makeIntParam(CameraParam::ROI_X1, &CameraParams::roiX1),
+    makeIntParam(CameraParam::ROI_Y1, &CameraParams::roiY1),
+    makeIntParam(CameraParam::ALC_GATE, &CameraParams::alcGate),
+    makeIntParam(CameraParam::CHANGING_MODE, &CameraParams::changingMode),
+    makeIntParam(CameraParam::CHROMA_LEVEL, &CameraParams::chromaLevel, 0,
+                 MAX_PERCENT),
+    makeIntParam(CameraParam::DETAIL, &CameraParams::detail, 0, MAX_PERCENT),
+    makeIntParam(CameraParam::PROFILE, &CameraParams::profile),
+    makeIntParam(CameraParam::TYPE, &CameraParams::type)};
+static_assert(INT_PARAMS.size() == INT_PARAMS_NUMBER,
+              "wrong number of int params");
+
+
+
+/// Float params.
+constexpr std::array FLOAT_PARAMS{
+    makeFloatParam(CameraParam::FPS, &CameraParams::fps),
+    makeFloatParam(CameraParam::DIGITAL_ZOOM, &CameraParams::digitalZoom,
+                   MIN_DIGITAL_ZOOM, MAX_DIGITAL_ZOOM),
+    makeFloatParam(CameraParam::DDE_LEVEL, &CameraParams::ddeLevel),
+    makeFloatParam(CameraParam::SENSITIVITY, &CameraParams::sensitivity),
+    makeFloatParam(CameraParam::CHANGING_LEVEL, &CameraParams::changingLevel),
+    makeFloatParam(CameraParam::CUSTOM_1, &CameraParams::custom1),
+    makeFloatParam(CameraParam::CUSTOM_2, &CameraParams::custom2),
+    makeFloatParam(CameraParam::CUSTOM_3, &CameraParams::custom3)};
+static_assert(FLOAT_PARAMS.size() == FLOAT_PARAMS_NUMBER,
+              "wrong number of float params");
+
+
+
+/// Find the description of an int param. Returns nullptr if the param is not
+/// an int param which can be changed.
+const IntParam* findIntParam(CameraParam id)
+{
+    for (const IntParam& param : INT_PARAMS)
+    {
+        if (param.id == id)
+        {
+            return &param;
+        }
+    }
+
+    return nullptr;
+}
+
+
+
+/// Find the description of a float param. Returns nullptr if the param is not
+/// a float param which can be changed.
+const FloatParam* findFloatParam(CameraParam id)
+{
+    for (const FloatParam& param : FLOAT_PARAMS)
+    {
+        if (param.id == id)
+        {
+            return &param;
+        }
+    }
+
+    return nullptr;
+}
+
+
+
+/// Convert float param value to int. A conversion of NaN or of a value outside
+/// of the int range is undefined behavior, so such values are rejected.
+bool toInt(float value, int& result)
+{
+    // The comparison is false for NaN, so NaN is rejected.
+    if (!(value >= -INT_RANGE_LIMIT && value < INT_RANGE_LIMIT))
+    {
+        return false;
+    }
+    result = static_cast<int>(value);
+
+    return true;
+}
+
+
+
+/// Check that all params of the object are inside their ranges.
+bool areParamsValid(const CameraParams& params)
+{
+    if (params.initString.size() > MAX_INIT_STRING_SIZE)
+    {
+        return false;
+    }
+    for (const IntParam& param : INT_PARAMS)
+    {
+        const int value = params.*(param.field);
+        if (value < param.minValue || value > param.maxValue)
+        {
+            return false;
+        }
+    }
+    for (const FloatParam& param : FLOAT_PARAMS)
+    {
+        const float value = params.*(param.field);
+        // The comparison is false for NaN, so NaN is rejected.
+        if (!(value >= param.minValue && value <= param.maxValue))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+}
 
 
 
@@ -12,10 +277,7 @@ cr::camera::CustomCamera::CustomCamera()
 
 
 
-cr::camera::CustomCamera::~CustomCamera()
-{
-
-}
+cr::camera::CustomCamera::~CustomCamera() = default;
 
 
 
@@ -28,7 +290,16 @@ std::string cr::camera::CustomCamera::getVersion()
 
 bool cr::camera::CustomCamera::openCamera(std::string initString)
 {
-    // Set connection flags.
+    // Check the size of the init string.
+    if (initString.size() > MAX_INIT_STRING_SIZE)
+    {
+        return false;
+    }
+
+    // Set default params and connection flags.
+    const std::lock_guard<std::mutex> lock(m_paramsMutex);
+    m_params = CameraParams();
+    m_params.initString = std::move(initString);
     m_params.isOpen = true;
     m_params.isConnected = true;
 
@@ -39,10 +310,15 @@ bool cr::camera::CustomCamera::openCamera(std::string initString)
 
 bool cr::camera::CustomCamera::initCamera(CameraParams& params)
 {
-    // Copy params.
-    m_params = params;
+    // Check the params.
+    if (!areParamsValid(params))
+    {
+        return false;
+    }
 
-    // Set connection flags.
+    // Copy params and set connection flags.
+    const std::lock_guard<std::mutex> lock(m_paramsMutex);
+    m_params = params;
     m_params.isOpen = true;
     m_params.isConnected = true;
 
@@ -54,6 +330,7 @@ bool cr::camera::CustomCamera::initCamera(CameraParams& params)
 void cr::camera::CustomCamera::closeCamera()
 {
     // Reset connection flags.
+    const std::lock_guard<std::mutex> lock(m_paramsMutex);
     m_params.isOpen = false;
     m_params.isConnected = false;
 }
@@ -62,14 +339,15 @@ void cr::camera::CustomCamera::closeCamera()
 
 bool cr::camera::CustomCamera::isCameraOpen()
 {
+    const std::lock_guard<std::mutex> lock(m_paramsMutex);
     return m_params.isOpen;
 }
 
 
 
-
 bool cr::camera::CustomCamera::isCameraConnected()
 {
+    const std::lock_guard<std::mutex> lock(m_paramsMutex);
     return m_params.isConnected;
 }
 
@@ -77,360 +355,34 @@ bool cr::camera::CustomCamera::isCameraConnected()
 
 bool cr::camera::CustomCamera::setParam(CameraParam id, float value)
 {
-    // Check param ID.
-    switch (id)
+    // Int params: the value must be convertible to int and inside the range.
+    if (const IntParam* param = findIntParam(id); param != nullptr)
     {
-    case CameraParam::WIDTH:
-    {
-        // Save value.
-        m_params.width = (int)value;
+        int intValue = 0;
+        if (!toInt(value, intValue) ||
+            intValue < param->minValue || intValue > param->maxValue)
+        {
+            return false;
+        }
+        const std::lock_guard<std::mutex> lock(m_paramsMutex);
+        m_params.*(param->field) = intValue;
         return true;
-    }
-    case CameraParam::HEIGHT:
-    {
-        // Save value.
-        m_params.height = (int)value;
-        return true;
-    }
-    case CameraParam::DISPLAY_MODE:
-    {
-        // Save value.
-        m_params.displayMode = (int)value;
-        return true;
-    }
-    case CameraParam::VIDEO_OUTPUT:
-    {
-        // Save value.
-        m_params.videoOutput = (int)value;
-        return true;
-    }
-    case CameraParam::LOG_MODE:
-    {
-        // Save value.
-        m_params.logMode = (int)value;
-        return true;
-    }
-    case CameraParam::EXPOSURE_MODE:
-    {
-        // Save value.
-        m_params.exposureMode = (int)value;
-        return true;
-    }
-    case CameraParam::EXPOSURE_TIME:
-    {
-        // Save value.
-        m_params.exposureTime = (int)value;
-        return true;
-    }
-    case CameraParam::WHITE_BALANCE_MODE:
-    {
-        // Save value.
-        m_params.whiteBalanceMode = (int)value;
-        return true;
-    }
-    case CameraParam::WHITE_BALANCE_AREA:
-    {
-        // Save value.
-        m_params.whiteBalanceArea = (int)value;
-        return true;
-    }
-    case CameraParam::WIDE_DYNAMIC_RANGE_MODE:
-    {
-        // Save value.
-        m_params.wideDynamicRangeMode = (int)value;
-        return true;
-    }
-    case CameraParam::STABILIZATION_MODE:
-    {
-        // Save value.
-        m_params.stabilizationMode = (int)value;
-        return true;
-    }
-    case CameraParam::ISO_SENSITIVITY:
-    {
-        // Save value.
-        m_params.isoSensitivity = (int)value;
-        return true;
-    }
-    case CameraParam::SCENE_MODE:
-    {
-        // Save value.
-        m_params.sceneMode = (int)value;
-        return true;
-    }
-    case CameraParam::FPS:
-    {
-        // Save value.
-        m_params.fps = value;
-        return true;
-    }
-    case CameraParam::BRIGHTNESS_MODE:
-    {
-        // Save value.
-        m_params.brightnessMode = (int)value;
-        return true;
-    }
-    case CameraParam::BRIGHTNESS:
-    {
-        // Save value.
-        m_params.brightness = (int)value;
-        return true;
-    }
-    case CameraParam::CONTRAST:
-    {
-        // Save value.
-        m_params.contrast = (int)value;
-        return true;
-    }
-    case CameraParam::GAIN_MODE:
-    {
-        // Save value.
-        m_params.gainMode = (int)value;
-        return true;
-    }
-    case CameraParam::GAIN:
-    {
-        // Save value.
-        m_params.gain = (int)value;
-        return true;
-    }
-    case CameraParam::SHARPENING_MODE:
-    {
-        // Save value.
-        m_params.sharpeningMode = (int)value;
-        return true;
-    }
-    case CameraParam::SHARPENING:
-    {
-        // Save value.
-        m_params.sharpening = (int)value;
-        return true;
-    }
-    case CameraParam::PALETTE:
-    {
-        // Save value.
-        m_params.palette = (int)value;
-        return true;
-    }
-    case CameraParam::AGC_MODE:
-    {
-        // Save value.
-        m_params.agcMode = (int)value;
-        return true;
-    }
-    case CameraParam::SHUTTER_MODE:
-    {
-        // Save value.
-        m_params.shutterMode = (int)value;
-        return true;
-    }
-    case CameraParam::SHUTTER_POSITION:
-    {
-        // Save value.
-        m_params.shutterPos = (int)value;
-        return true;
-    }
-    case CameraParam::SHUTTER_SPEED:
-    {
-        // Save value.
-        m_params.shutterSpeed = (int)value;
-        return true;
-    }
-    case CameraParam::DIGITAL_ZOOM_MODE:
-    {
-        // Save value.
-        m_params.digitalZoomMode = (int)value;
-        return true;
-    }
-    case CameraParam::DIGITAL_ZOOM:
-    {
-        // Save value.
-        m_params.digitalZoom = value;
-        return true;
-    }
-    case CameraParam::EXPOSURE_COMPENSATION_MODE:
-    {
-        // Save value.
-        m_params.exposureCompensationMode = (int)value;
-        return true;
-    }
-    case CameraParam::EXPOSURE_COMPENSATION_POSITION:
-    {
-        // Save value.
-        m_params.exposureCompensationPosition = (int)value;
-        return true;
-    }
-    case CameraParam::DEFOG_MODE:
-    {
-        // Save value.
-        m_params.defogMode = (int)value;
-        return true;
-    }
-    case CameraParam::DEHAZE_MODE:
-    {
-        // Save value.
-        m_params.dehazeMode = (int)value;
-        return true;
-    }
-    case CameraParam::NOISE_REDUCTION_MODE:
-    {
-        // Save value.
-        m_params.noiseReductionMode = (int)value;
-        return true;
-    }
-    case CameraParam::BLACK_WHITE_FILTER_MODE:
-    {
-        // Save value.
-        m_params.blackAndWhiteFilterMode = (int)value;
-        return true;
-    }
-    case CameraParam::FILTER_MODE:
-    {
-        // Save value.
-        m_params.filterMode = (int)value;
-        return true;
-    }
-    case CameraParam::NUC_MODE:
-    {
-        // Save value.
-        m_params.nucMode = (int)value;
-        return true;
-    }
-    case CameraParam::AUTO_NUC_INTERVAL_MSEC:
-    {
-        // Save value.
-        m_params.autoNucIntervalMsec = (int)value;
-        return true;
-    }
-    case CameraParam::IMAGE_FLIP:
-    {
-        // Save value.
-        m_params.imageFlip = (int)value;
-        return true;
-    }
-    case CameraParam::DDE_MODE:
-    {
-        // Save value.
-        m_params.ddeMode = (int)value;
-        return true;
-    }
-    case CameraParam::DDE_LEVEL:
-    {
-        // Save value.
-        m_params.ddeLevel = value;
-        return true;
-    }
-    case CameraParam::ROI_X0:
-    {
-        // Save value.
-        m_params.roiX0 = (int)value;
-        return true;
-    }
-    case CameraParam::ROI_Y0:
-    {
-        // Save value.
-        m_params.roiY0 = (int)value;
-        return true;
-    }
-    case CameraParam::ROI_X1:
-    {
-        // Save value.
-        m_params.roiX1 = (int)value;
-        return true;
-    }
-    case CameraParam::ROI_Y1:
-    {
-        // Save value.
-        m_params.roiY1 = (int)value;
-        return true;
-    }
-    case CameraParam::TEMPERATURE:
-    {
-        // Read only.
-        return false;
-    }
-    case CameraParam::ALC_GATE:
-    {
-        // Save value.
-        m_params.alcGate = (int)value;
-        return true;
-    }
-    case CameraParam::SENSITIVITY:
-    {
-        // Save value.
-        m_params.sensitivity = value;
-        return true;
-    }
-    case CameraParam::CHANGING_MODE:
-    {
-        // Save value.
-        m_params.changingMode = (int)value;
-        return true;
-    }
-    case CameraParam::CHANGING_LEVEL:
-    {
-        // Save value.
-        m_params.changingLevel = value;
-        return true;
-    }
-    case CameraParam::CHROMA_LEVEL:
-    {
-        // Save value.
-        m_params.chromaLevel = (int)value;
-        return true;
-    }
-    case CameraParam::DETAIL:
-    {
-        // Save value.
-        m_params.detail = (int)value;
-        return true;
-    }
-    case CameraParam::PROFILE:
-    {
-        // Save value.
-        m_params.profile = (int)value;
-        return true;
-    }
-    case CameraParam::IS_CONNECTED:
-    {
-        // Read only.
-        return false;
-    }
-    case CameraParam::IS_OPEN:
-    {
-        // Read only.
-        return false;
-    }
-    case CameraParam::TYPE:
-    {
-        // Save value.
-        m_params.type = (int)value;
-        return true;
-    }
-    case CameraParam::CUSTOM_1:
-    {
-        // Save value.
-        m_params.custom1 = value;
-        return true;
-    }
-    case CameraParam::CUSTOM_2:
-    {
-        // Save value.
-        m_params.custom2 = value;
-        return true;
-    }
-    case CameraParam::CUSTOM_3:
-    {
-        // Save value.
-        m_params.custom3 = value;
-        return true;
-    }
-    default:
-    {
-        return false;
-    }
     }
 
+    // Float params: the value must be inside the range (NaN is rejected).
+    if (const FloatParam* param = findFloatParam(id); param != nullptr)
+    {
+        if (!(value >= param->minValue && value <= param->maxValue))
+        {
+            return false;
+        }
+        const std::lock_guard<std::mutex> lock(m_paramsMutex);
+        m_params.*(param->field) = value;
+        return true;
+    }
+
+    // Read only params (temperature, connection and open status) and unknown
+    // IDs.
     return false;
 }
 
@@ -438,216 +390,23 @@ bool cr::camera::CustomCamera::setParam(CameraParam id, float value)
 
 float cr::camera::CustomCamera::getParam(CameraParam id)
 {
-    // Check param ID.
+    const std::lock_guard<std::mutex> lock(m_paramsMutex);
+
+    if (const IntParam* param = findIntParam(id); param != nullptr)
+    {
+        return static_cast<float>(m_params.*(param->field));
+    }
+    if (const FloatParam* param = findFloatParam(id); param != nullptr)
+    {
+        return m_params.*(param->field);
+    }
+
+    // Read only params and unknown IDs.
     switch (id)
     {
-    case CameraParam::WIDTH:
-    {
-        return (float)m_params.width;
-    }
-    case CameraParam::HEIGHT:
-    {
-        return (float)m_params.height;
-    }
-    case CameraParam::DISPLAY_MODE:
-    {
-        return (float)m_params.displayMode;
-    }
-    case CameraParam::VIDEO_OUTPUT:
-    {
-        return (float)m_params.videoOutput;
-    }
-    case CameraParam::LOG_MODE:
-    {
-        return (float)m_params.logMode;
-    }
-    case CameraParam::EXPOSURE_MODE:
-    {
-        return (float)m_params.exposureMode;
-    }
-    case CameraParam::EXPOSURE_TIME:
-    {
-        return (float)m_params.exposureTime;
-    }
-    case CameraParam::WHITE_BALANCE_MODE:
-    {
-        return (float)m_params.whiteBalanceMode;
-    }
-    case CameraParam::WHITE_BALANCE_AREA:
-    {
-        return (float)m_params.whiteBalanceArea;
-    }
-    case CameraParam::WIDE_DYNAMIC_RANGE_MODE:
-    {
-        return (float)m_params.wideDynamicRangeMode;
-    }
-    case CameraParam::STABILIZATION_MODE:
-    {
-        return (float)m_params.stabilizationMode;
-    }
-    case CameraParam::ISO_SENSITIVITY:
-    {
-        return (float)m_params.isoSensitivity;
-    }
-    case CameraParam::SCENE_MODE:
-    {
-        return (float)m_params.sceneMode;
-    }
-    case CameraParam::FPS:
-    {
-        return m_params.fps;
-    }
-    case CameraParam::BRIGHTNESS_MODE:
-    {
-        return (float)m_params.brightnessMode;
-    }
-    case CameraParam::BRIGHTNESS:
-    {
-        return (float)m_params.brightness;
-    }
-    case CameraParam::CONTRAST:
-    {
-        return (float)m_params.contrast;
-    }
-    case CameraParam::GAIN_MODE:
-    {
-        return (float)m_params.gainMode;
-    }
-    case CameraParam::GAIN:
-    {
-        return (float)m_params.gain;
-    }
-    case CameraParam::SHARPENING_MODE:
-    {
-        return (float)m_params.sharpeningMode;
-    }
-    case CameraParam::SHARPENING:
-    {
-        return (float)m_params.sharpening;
-    }
-    case CameraParam::PALETTE:
-    {
-        return (float)m_params.palette;
-    }
-    case CameraParam::AGC_MODE:
-    {
-        return (float)m_params.agcMode;
-    }
-    case CameraParam::SHUTTER_MODE:
-    {
-        return (float)m_params.shutterMode;
-    }
-    case CameraParam::SHUTTER_POSITION:
-    {
-        return (float)m_params.shutterPos;
-    }
-    case CameraParam::SHUTTER_SPEED:
-    {
-        return (float)m_params.shutterSpeed;
-    }
-    case CameraParam::DIGITAL_ZOOM_MODE:
-    {
-        return (float)m_params.digitalZoomMode;
-    }
-    case CameraParam::DIGITAL_ZOOM:
-    {
-        return m_params.digitalZoom;
-    }
-    case CameraParam::EXPOSURE_COMPENSATION_MODE:
-    {
-        return (float)m_params.exposureCompensationMode;
-    }
-    case CameraParam::EXPOSURE_COMPENSATION_POSITION:
-    {
-        return (float)m_params.exposureCompensationPosition;
-    }
-    case CameraParam::DEFOG_MODE:
-    {
-        return (float)m_params.defogMode;
-    }
-    case CameraParam::DEHAZE_MODE:
-    {
-        return (float)m_params.dehazeMode;
-    }
-    case CameraParam::NOISE_REDUCTION_MODE:
-    {
-        return (float)m_params.noiseReductionMode;
-    }
-    case CameraParam::BLACK_WHITE_FILTER_MODE:
-    {
-        return (float)m_params.blackAndWhiteFilterMode;
-    }
-    case CameraParam::FILTER_MODE:
-    {
-        return (float)m_params.filterMode;
-    }
-    case CameraParam::NUC_MODE:
-    {
-        return (float)m_params.nucMode;
-    }
-    case CameraParam::AUTO_NUC_INTERVAL_MSEC:
-    {
-        return (float)m_params.autoNucIntervalMsec;
-    }
-    case CameraParam::IMAGE_FLIP:
-    {
-        return (float)m_params.imageFlip;
-    }
-    case CameraParam::DDE_MODE:
-    {
-        return (float)m_params.ddeMode;
-    }
-    case CameraParam::DDE_LEVEL:
-    {
-        return m_params.ddeLevel;
-    }
-    case CameraParam::ROI_X0:
-    {
-        return (float)m_params.roiX0;
-    }
-    case CameraParam::ROI_Y0:
-    {
-        return (float)m_params.roiY0;
-    }
-    case CameraParam::ROI_X1:
-    {
-        return (float)m_params.roiX1;
-    }
-    case CameraParam::ROI_Y1:
-    {
-        return (float)m_params.roiY1;
-    }
     case CameraParam::TEMPERATURE:
     {
         return m_params.temperature;
-    }
-    case CameraParam::ALC_GATE:
-    {
-        return (float)m_params.alcGate;
-    }
-    case CameraParam::SENSITIVITY:
-    {
-        return (float)m_params.sensitivity;
-    }
-    case CameraParam::CHANGING_MODE:
-    {
-        return (float)m_params.changingMode;
-    }
-    case CameraParam::CHANGING_LEVEL:
-    {
-        return m_params.changingLevel;
-    }
-    case CameraParam::CHROMA_LEVEL:
-    {
-        return (float)m_params.chromaLevel;
-    }
-    case CameraParam::DETAIL:
-    {
-        return (float)m_params.detail;
-    }
-    case CameraParam::PROFILE:
-    {
-        return (float)m_params.profile;
     }
     case CameraParam::IS_CONNECTED:
     {
@@ -657,35 +416,18 @@ float cr::camera::CustomCamera::getParam(CameraParam id)
     {
         return m_params.isOpen ? 1.0f : 0.0f;
     }
-    case CameraParam::TYPE:
-    {
-        return (float)m_params.type;
-    }
-    case CameraParam::CUSTOM_1:
-    {
-        return m_params.custom1;
-    }
-    case CameraParam::CUSTOM_2:
-    {
-        return m_params.custom2;
-    }
-    case CameraParam::CUSTOM_3:
-    {
-        return m_params.custom3;
-    }
     default:
     {
         return -1.0f;
     }
     }
-
-    return -1.0f;
 }
 
 
 
 void cr::camera::CustomCamera::getParams(CameraParams& params)
 {
+    const std::lock_guard<std::mutex> lock(m_paramsMutex);
     params = m_params;
 }
 
@@ -693,57 +435,21 @@ void cr::camera::CustomCamera::getParams(CameraParams& params)
 
 bool cr::camera::CustomCamera::executeCommand(CameraCommand id)
 {
-    // Check command.
+    // The example accepts every command of the interface and does nothing.
     switch (id)
     {
     case CameraCommand::RESTART:
-    {
-        return true;
-    }
     case CameraCommand::NUC:
-    {
-        return true;
-    }
     case CameraCommand::APPLY_PARAMS:
-    {
-        return true;
-    }
     case CameraCommand::SAVE_PARAMS:
-    {
-        return true;
-    }
     case CameraCommand::MENU_ON:
-    {
-        return true;
-    }
     case CameraCommand::MENU_OFF:
-    {
-        return true;
-    }
     case CameraCommand::MENU_SET:
-    {
-        return true;
-    }
     case CameraCommand::MENU_UP:
-    {
-        return true;
-    }
     case CameraCommand::MENU_DOWN:
-    {
-        return true;
-    }
     case CameraCommand::MENU_LEFT:
-    {
-        return true;
-    }
     case CameraCommand::MENU_RIGHT:
-    {
-        return true;
-    }
     case CameraCommand::FREEZE:
-    {
-        return true;
-    }
     case CameraCommand::DEFREEZE:
     {
         return true;
@@ -753,34 +459,28 @@ bool cr::camera::CustomCamera::executeCommand(CameraCommand id)
         return false;
     }
     }
-
-    return false;
 }
 
 
 
-bool cr::camera::CustomCamera::decodeAndExecuteCommand(uint8_t* data, int size)
+bool cr::camera::CustomCamera::decodeAndExecuteCommand(
+        uint8_t* data, int size)
 {
-    // Decode command.
+    // Decode command. The decoder checks the size, the version and the IDs.
     CameraCommand commandId = CameraCommand::NUC;
     CameraParam paramId = CameraParam::NUC_MODE;
     float value = 0.0f;
-    switch (Camera::decodeCommand(data, size, paramId, commandId, value))
+    const int result =
+            Camera::decodeCommand(data, size, paramId, commandId, value);
+
+    // Execute the decoded command.
+    if (result == 0)
     {
-    // COMMAND.
-    case 0:
-        // Executte command.
         return executeCommand(commandId);
-    // SET_PARAM.
-    case 1:
+    }
+    if (result == 1)
     {
-        // Set param.
         return setParam(paramId, value);
-    }
-    default:
-    {
-        return false;
-    }
     }
 
     return false;
