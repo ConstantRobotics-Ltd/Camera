@@ -14,8 +14,8 @@
 
 namespace
 {
-using cr::camera::CameraParam;
-using cr::camera::CameraParams;
+using rapidpixel::CameraParam;
+using rapidpixel::CameraParams;
 
 /// Maximum size of the init string, bytes. The init string is stored in the
 /// params only, so the limit protects the memory of the example.
@@ -268,7 +268,7 @@ bool areParamsValid(const CameraParams& params)
 
 
 
-cr::camera::CustomCamera::CustomCamera()
+rapidpixel::CustomCamera::CustomCamera()
 {
     // Reset connection flags.
     m_params.isOpen = false;
@@ -277,18 +277,18 @@ cr::camera::CustomCamera::CustomCamera()
 
 
 
-cr::camera::CustomCamera::~CustomCamera() = default;
+rapidpixel::CustomCamera::~CustomCamera() = default;
 
 
 
-std::string cr::camera::CustomCamera::getVersion()
+std::string rapidpixel::CustomCamera::getVersion()
 {
     return CUSTOM_CAMERA_VERSION;
 }
 
 
 
-bool cr::camera::CustomCamera::openCamera(std::string initString)
+bool rapidpixel::CustomCamera::openCamera(std::string initString)
 {
     // Check the size of the init string.
     if (initString.size() > MAX_INIT_STRING_SIZE)
@@ -308,7 +308,7 @@ bool cr::camera::CustomCamera::openCamera(std::string initString)
 
 
 
-bool cr::camera::CustomCamera::initCamera(CameraParams& params)
+bool rapidpixel::CustomCamera::initCamera(CameraParams& params)
 {
     // Check the params.
     if (!areParamsValid(params))
@@ -327,7 +327,7 @@ bool cr::camera::CustomCamera::initCamera(CameraParams& params)
 
 
 
-void cr::camera::CustomCamera::closeCamera()
+void rapidpixel::CustomCamera::closeCamera()
 {
     // Reset connection flags.
     const std::lock_guard<std::mutex> lock(m_paramsMutex);
@@ -337,7 +337,7 @@ void cr::camera::CustomCamera::closeCamera()
 
 
 
-bool cr::camera::CustomCamera::isCameraOpen()
+bool rapidpixel::CustomCamera::isCameraOpen()
 {
     const std::lock_guard<std::mutex> lock(m_paramsMutex);
     return m_params.isOpen;
@@ -345,7 +345,7 @@ bool cr::camera::CustomCamera::isCameraOpen()
 
 
 
-bool cr::camera::CustomCamera::isCameraConnected()
+bool rapidpixel::CustomCamera::isCameraConnected()
 {
     const std::lock_guard<std::mutex> lock(m_paramsMutex);
     return m_params.isConnected;
@@ -353,7 +353,7 @@ bool cr::camera::CustomCamera::isCameraConnected()
 
 
 
-bool cr::camera::CustomCamera::setParam(CameraParam id, float value)
+bool rapidpixel::CustomCamera::setParam(CameraParam id, float value)
 {
     // Int params: the value must be convertible to int and inside the range.
     if (const IntParam* param = findIntParam(id); param != nullptr)
@@ -388,7 +388,7 @@ bool cr::camera::CustomCamera::setParam(CameraParam id, float value)
 
 
 
-float cr::camera::CustomCamera::getParam(CameraParam id)
+float rapidpixel::CustomCamera::getParam(CameraParam id)
 {
     const std::lock_guard<std::mutex> lock(m_paramsMutex);
 
@@ -425,7 +425,7 @@ float cr::camera::CustomCamera::getParam(CameraParam id)
 
 
 
-void cr::camera::CustomCamera::getParams(CameraParams& params)
+void rapidpixel::CustomCamera::getParams(CameraParams& params)
 {
     const std::lock_guard<std::mutex> lock(m_paramsMutex);
     params = m_params;
@@ -433,7 +433,7 @@ void cr::camera::CustomCamera::getParams(CameraParams& params)
 
 
 
-bool cr::camera::CustomCamera::executeCommand(CameraCommand id)
+bool rapidpixel::CustomCamera::executeCommand(CameraCommand id)
 {
     // The example accepts every command of the interface and does nothing.
     switch (id)
@@ -463,7 +463,7 @@ bool cr::camera::CustomCamera::executeCommand(CameraCommand id)
 
 
 
-bool cr::camera::CustomCamera::decodeAndExecuteCommand(
+bool rapidpixel::CustomCamera::decodeAndExecuteCommand(
         uint8_t* data, int size)
 {
     // Decode command. The decoder checks the size, the version and the IDs.

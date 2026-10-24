@@ -17,11 +17,11 @@
 
 namespace
 {
-using cr::camera::Camera;
-using cr::camera::CameraCommand;
-using cr::camera::CameraParam;
-using cr::camera::CameraParams;
-using cr::camera::CameraParamsMask;
+using rapidpixel::Camera;
+using rapidpixel::CameraCommand;
+using rapidpixel::CameraParam;
+using rapidpixel::CameraParams;
+using rapidpixel::CameraParamsMask;
 
 /// Number of fields of CameraParams which are serialized.
 constexpr size_t FIELDS_NUMBER{58};
@@ -1401,13 +1401,13 @@ bool jsonStringTest()
     {
         CameraParams in;
         jsonParams(in);
-        cr::utils::ConfigReader writer;
+        rapidpixel::ConfigReader writer;
         std::string json;
         if (!writer.set(in, "cameraParams") || !writer.writeToString(json))
         {
             return fail("Can't write params to string");
         }
-        cr::utils::ConfigReader reader;
+        rapidpixel::ConfigReader reader;
         CameraParams out;
         if (!reader.readFromString(json) || !reader.get(out, "cameraParams"))
         {
@@ -1436,7 +1436,7 @@ bool jsonStringTest()
         CameraParams out;
         randomParams(out);
         const CameraParams before(out);
-        cr::utils::ConfigReader reader;
+        rapidpixel::ConfigReader reader;
         if (reader.readFromString(document) &&
             reader.get(out, "cameraParams"))
         {
@@ -1464,12 +1464,12 @@ bool jsonFileTest()
     CameraParams in;
     jsonParams(in);
 
-    cr::utils::ConfigReader writer;
+    rapidpixel::ConfigReader writer;
     if (!writer.set(in, "cameraParams") || !writer.writeToFile(JSON_FILE_NAME))
     {
         return fail("Can't write params to file");
     }
-    cr::utils::ConfigReader reader;
+    rapidpixel::ConfigReader reader;
     CameraParams out;
     if (!reader.readFromFile(JSON_FILE_NAME) ||
         !reader.get(out, "cameraParams"))

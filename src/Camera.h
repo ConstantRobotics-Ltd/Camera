@@ -5,9 +5,7 @@
 
 
 
-namespace cr
-{
-namespace camera
+namespace rapidpixel
 {
 /**
  * @brief Camera params mask.
@@ -703,5 +701,16 @@ protected:
      */
     Camera& operator= (Camera&& src) = default;
 };
+}
+
+
+
+// Compatibility: the names of namespace rapidpixel are also available in
+// namespace cr::camera.
+namespace cr
+{
+namespace camera
+{
+using namespace ::rapidpixel;
 }
 }

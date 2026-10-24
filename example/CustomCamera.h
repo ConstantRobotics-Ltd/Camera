@@ -6,9 +6,7 @@
 
 
 
-namespace cr
-{
-namespace camera
+namespace rapidpixel
 {
 /**
  * @brief Custom camera controller class.
@@ -137,5 +135,4 @@ private:
     /// Mutex to protect m_params.
     std::mutex m_paramsMutex;
 };
-}
 }

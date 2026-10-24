@@ -67,13 +67,13 @@ constexpr int SET_PARAM_COMMAND_SIZE{COMMAND_VALUE_POS + VALUE_SIZE};
 
 /// The first and the last command ID: the enum values are consecutive.
 constexpr int FIRST_COMMAND_ID{
-        static_cast<int>(cr::camera::CameraCommand::RESTART)};
+        static_cast<int>(rapidpixel::CameraCommand::RESTART)};
 constexpr int LAST_COMMAND_ID{
-        static_cast<int>(cr::camera::CameraCommand::DEFREEZE)};
+        static_cast<int>(rapidpixel::CameraCommand::DEFREEZE)};
 /// The first and the last param ID: the enum values are consecutive.
-constexpr int FIRST_PARAM_ID{static_cast<int>(cr::camera::CameraParam::WIDTH)};
+constexpr int FIRST_PARAM_ID{static_cast<int>(rapidpixel::CameraParam::WIDTH)};
 constexpr int LAST_PARAM_ID{
-        static_cast<int>(cr::camera::CameraParam::CUSTOM_3)};
+        static_cast<int>(rapidpixel::CameraParam::CUSTOM_3)};
 static_assert(LAST_PARAM_ID - FIRST_PARAM_ID + 1 ==
               static_cast<int>(FIELDS_NUMBER),
               "CameraParam enum doesn't match CameraParams");
@@ -125,7 +125,7 @@ FieldRef makeField(bool& value)
 /// Get the table of CameraParams fields in the order they are stored in the
 /// encoded data (the same order as the bits of the mask). The type of the
 /// table is deduced from the number of the fields: it is checked below.
-auto makeFieldTable(cr::camera::CameraParams& p)
+auto makeFieldTable(rapidpixel::CameraParams& p)
 {
     return std::array{
         makeField(p.width), makeField(p.height), makeField(p.displayMode),
@@ -158,7 +158,7 @@ auto makeFieldTable(cr::camera::CameraParams& p)
 
 
 /// Get the table of mask flags in the same order as the table of fields.
-auto makeMaskTable(const cr::camera::CameraParamsMask& m)
+auto makeMaskTable(const rapidpixel::CameraParamsMask& m)
 {
     return std::array{
         m.width, m.height, m.displayMode, m.videoOutput, m.logMode,
@@ -179,10 +179,10 @@ auto makeMaskTable(const cr::camera::CameraParamsMask& m)
 
 // Both tables must have one element for each field.
 static_assert(std::tuple_size<decltype(makeFieldTable(
-        std::declval<cr::camera::CameraParams&>()))>::value == FIELDS_NUMBER,
+        std::declval<rapidpixel::CameraParams&>()))>::value == FIELDS_NUMBER,
         "wrong number of fields in the table of fields");
 static_assert(std::tuple_size<decltype(makeMaskTable(
-        std::declval<const cr::camera::CameraParamsMask&>()))>::value ==
+        std::declval<const rapidpixel::CameraParamsMask&>()))>::value ==
         FIELDS_NUMBER, "wrong number of flags in the table of mask flags");
 
 
@@ -224,18 +224,18 @@ bool isVersionValid(const uint8_t* data)
 
 
 
-cr::camera::Camera::~Camera() = default;
+rapidpixel::Camera::~Camera() = default;
 
 
 
-std::string cr::camera::Camera::getVersion()
+std::string rapidpixel::Camera::getVersion()
 {
     return CAMERA_VERSION;
 }
 
 
 
-bool cr::camera::CameraParams::encode(
+bool rapidpixel::CameraParams::encode(
         uint8_t* data, int bufferSize, int& size, CameraParamsMask* mask)
 {
     // Nothing is encoded until the arguments are checked.
@@ -294,7 +294,7 @@ bool cr::camera::CameraParams::encode(
 
 
 
-bool cr::camera::CameraParams::decode(uint8_t* data, int dataSize)
+bool rapidpixel::CameraParams::decode(uint8_t* data, int dataSize)
 {
     // Check the pointer and the size of the data: the header must be complete.
     if (data == nullptr || dataSize < PARAMS_HEADER_SIZE)
@@ -349,7 +349,7 @@ bool cr::camera::CameraParams::decode(uint8_t* data, int dataSize)
 
 
 
-void cr::camera::Camera::encodeSetParamCommand(
+void rapidpixel::Camera::encodeSetParamCommand(
         uint8_t* data, int& size, CameraParam id, float value)
 {
     // Nothing is encoded without a buffer.
@@ -369,8 +369,8 @@ void cr::camera::Camera::encodeSetParamCommand(
 
 
 
-void cr::camera::Camera::encodeCommand(
-        uint8_t* data, int& size, cr::camera::CameraCommand id)
+void rapidpixel::Camera::encodeCommand(
+        uint8_t* data, int& size, rapidpixel::CameraCommand id)
 {
     // Nothing is encoded without a buffer.
     if (data == nullptr)
@@ -388,10 +388,10 @@ void cr::camera::Camera::encodeCommand(
 
 
 
-int cr::camera::Camera::decodeCommand(uint8_t* data,
+int rapidpixel::Camera::decodeCommand(uint8_t* data,
                                       int size,
-                                      cr::camera::CameraParam& paramId,
-                                      cr::camera::CameraCommand& commandId,
+                                      rapidpixel::CameraParam& paramId,
+                                      rapidpixel::CameraCommand& commandId,
                                       float& value)
 {
     // Check the pointer, the size (both commands have at least this size) and

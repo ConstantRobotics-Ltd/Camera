@@ -110,9 +110,7 @@ src --------------------------- Folder with source code of the library.
 **Camera** interface class declared in **Camera.h** file. Class declaration:
 
 ```cpp
-namespace cr
-{
-namespace camera
+namespace rapidpixel
 {
 /// Camera controller interface class.
 class Camera
@@ -188,7 +186,6 @@ protected:
     Camera& operator= (Camera&& src) = default;
 };
 }
-}
 ```
 
 
@@ -204,7 +201,7 @@ static std::string getVersion();
 Method can be used without **Camera** class instance:
 
 ```cpp
-std::cout << "Camera class v: " << cr::camera::Camera::getVersion() << std::endl;
+std::cout << "Camera class v: " << rapidpixel::Camera::getVersion() << std::endl;
 ```
 
 Console output:
@@ -371,8 +368,8 @@ int size = 0;
 // Parameter value.
 float outValue = 5.0f;
 // Encode command.
-cr::camera::Camera::encodeSetParamCommand(
-    data, size, cr::camera::CameraParam::ROI_X0, outValue);
+rapidpixel::Camera::encodeSetParamCommand(
+    data, size, rapidpixel::CameraParam::ROI_X0, outValue);
 ```
 
 
@@ -401,7 +398,7 @@ uint8_t data[7];
 // Size of encoded data.
 int size = 0;
 // Encode command.
-cr::camera::Camera::encodeCommand(data, size, cr::camera::CameraCommand::NUC);
+rapidpixel::Camera::encodeCommand(data, size, rapidpixel::CameraCommand::NUC);
 ```
 
 
@@ -446,7 +443,7 @@ virtual bool decodeAndExecuteCommand(uint8_t* data, int size) = 0;
 Recommended implementation of **decodeAndExecuteCommand(...)** method:
 
 ```cpp
-bool cr::camera::CustomCamera::decodeAndExecuteCommand(
+bool rapidpixel::CustomCamera::decodeAndExecuteCommand(
         uint8_t* data, int size)
 {
     // Decode command. The decoder checks the size, the version and the IDs.
@@ -481,9 +478,7 @@ bool cr::camera::CustomCamera::decodeAndExecuteCommand(
 Enum declaration:
 
 ```cpp
-namespace cr
-{
-namespace camera
+namespace rapidpixel
 {
 /// Camera controller commands enum. The values are consecutive: the first
 /// value is RESTART and the last one is DEFREEZE. Camera::decodeCommand(...)
@@ -518,7 +513,6 @@ enum class CameraCommand
     DEFREEZE
 };
 }
-}
 ```
 
 **Table 2** - Camera action commands description. Some commands may be unsupported by particular camera controller.
@@ -546,9 +540,7 @@ enum class CameraCommand
 Enum declaration:
 
 ```cpp
-namespace cr
-{
-namespace camera
+namespace rapidpixel
 {
 /// Camera controller params. The values are consecutive: the first value is
 /// WIDTH and the last one is CUSTOM_3. Camera::decodeCommand(...) uses them to
@@ -704,7 +696,6 @@ enum class CameraParam
     CUSTOM_3
 };
 }
-}
 ```
 
 **Table 3** - Camera parameters description. Some parameters may be unsupported by particular camera controller.
@@ -783,9 +774,7 @@ enum class CameraParam
 **CameraParams** interface class declared in **Camera.h** file. Class declaration:
 
 ```cpp
-namespace cr
-{
-namespace camera
+namespace rapidpixel
 {
 class CameraParams
 {
@@ -979,7 +968,6 @@ public:
     bool decode(uint8_t* data, int dataSize);
 };
 }
-}
 ```
 
 **Table 4** - CameraParams class fields description is equivalent to [CameraParam](#cameraparam-enum) enum description.
@@ -1137,7 +1125,7 @@ Example without parameters mask:
 
 ```cpp
 // Encode data.
-cr::camera::CameraParams in;
+rapidpixel::CameraParams in;
 in.profile = 10;
 uint8_t data[1024];
 int size = 0;
@@ -1153,11 +1141,11 @@ Example with parameters mask:
 
 ```cpp
 // Prepare params.
-cr::camera::CameraParams in;
+rapidpixel::CameraParams in;
 in.profile = 3;
 
 // Prepare mask.
-cr::camera::CameraParamsMask mask;
+rapidpixel::CameraParamsMask mask;
 mask.profile = false; // Exclude profile. Others by default.
 
 // Encode.
@@ -1192,7 +1180,7 @@ Example:
 
 ```cpp
 // Encode data.
-cr::camera::CameraParams in;
+rapidpixel::CameraParams in;
 uint8_t data[1024];
 int size = 0;
 if (!in.encode(data, 1024, size))
@@ -1203,7 +1191,7 @@ if (!in.encode(data, 1024, size))
 std::cout << "Encoded data size: " << size << " bytes" << std::endl;
 
 // Decode data.
-cr::camera::CameraParams out;
+rapidpixel::CameraParams out;
 if (!out.decode(data, size))
 {
     std::cout << "Can't decode data" << std::endl;
@@ -1219,14 +1207,14 @@ if (!out.decode(data, size))
 
 ```cpp
 // Prepare params.
-cr::camera::CameraParams in;
+rapidpixel::CameraParams in;
 in.initString = "dfhglsjirhuhjfb";
 in.width = 99;
 in.fps = 133.0f;
 in.digitalZoom = 201.0f;
 
 // Write params to file.
-cr::utils::ConfigReader inConfig;
+rapidpixel::ConfigReader inConfig;
 if (!inConfig.set(in, "cameraParams") ||
     !inConfig.writeToFile("TestCameraParams.json"))
 {
@@ -1235,13 +1223,13 @@ if (!inConfig.set(in, "cameraParams") ||
 }
 
 // Read params from file.
-cr::utils::ConfigReader outConfig;
+rapidpixel::ConfigReader outConfig;
 if (!outConfig.readFromFile("TestCameraParams.json"))
 {
     std::cout << "Can't open config file" << std::endl;
     return false;
 }
-cr::camera::CameraParams out;
+rapidpixel::CameraParams out;
 if (!outConfig.get(out, "cameraParams"))
 {
     std::cout << "Can't read params from config file" << std::endl;
@@ -1481,9 +1469,7 @@ Done!
 The **Camera** class provides only an interface, data structures, and methods for encoding and decoding commands and params. To create your own implementation of the camera controller, you must include the Camera repository in your project (see [Build and connect to your project](#build-and-connect-to-your-project) section). The catalogue **example** (see [Library files](#library-files) section) includes an example of the design of the custom camera controller. You must implement all the methods of the Camera interface class. The methods which are declared thread-safe in the description above must be thread-safe in the implementation (the example holds a mutex while it reads or changes the params). Custom camera class declaration:
 
 ```cpp
-namespace cr
-{
-namespace camera
+namespace rapidpixel
 {
 /**
  * @brief Custom camera controller class.
@@ -1550,7 +1536,6 @@ private:
     /// Mutex to protect m_params.
     std::mutex m_paramsMutex;
 };
-}
 }
 ```
 
