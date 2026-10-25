@@ -1203,7 +1203,7 @@ if (!out.decode(data, size))
 
 ## Read params from JSON file and write to JSON file
 
-**Camera** library depends on [ConfigReader](https://rapidpixel.constantrobotics.com/docs/Service/ConfigReader.html) library which provides methods to read params from JSON file and to write params to JSON file. The fields **temperature**, **isConnected** and **isOpen** are not stored in JSON. If the document is invalid, or a stored field is missing or has a wrong type, **get(...)** returns FALSE and the object is not changed. A value of an int field which is outside of the int range is rejected, a number with a fractional part is truncated. Example of writing and reading params to JSON file:
+**Camera** library depends on [ConfigReader](https://rapidpixel.constantrobotics.com/docs/Service/ConfigReader.html) library which provides methods to read params from JSON file and to write params to JSON file. The fields **temperature**, **isConnected** and **isOpen** are not stored in JSON. If the document is invalid, or a stored field is missing or has a wrong type, **get(...)** returns FALSE and the object is not changed (a boolean value of an int field is accepted as 0 or 1). A value of an int field which is outside of the int range is rejected, a number with a fractional part is truncated. Example of writing and reading params to JSON file:
 
 ```cpp
 // Prepare params.
