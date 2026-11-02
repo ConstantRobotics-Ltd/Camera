@@ -50,6 +50,8 @@
 
 **Camera** C++ library provides standard interface as well defines data structures and rules for different camera controllers. **Camera** interface class does nothing, just provides interface and provides methods to encode / decode commands and encode / decode params. Different camera controller classes inherit interface from **Camera** C++ class. **Camera.h** file contains list of data structures ([CameraCommand](#cameracommand-enum) enum, [CameraParam](#cameraparam-enum) enum and [CameraParams](#cameraparams-class-description) class) and **Camera** class declaration. [CameraCommand](#cameracommand-enum) enum contains IDs of action commands supported by **Camera** class. [CameraParam](#cameraparam-enum) enum contains IDs of params supported by **Camera** class. All camera controllers should include params and commands listed in **Camera.h** file. Camera interface class only depends on [ConfigReader](https://rapidpixel.constantrobotics.com/docs/Service/ConfigReader.html) library (provides methods to read / write JSON config files). The repository doesn't contain the source code of **ConfigReader**: the library must be placed next to the **Camera** repository (see [Build stand alone](#build-stand-alone)). It uses C++17 standard.
 
+**Camera** is general-purpose software: it is not tied to any sector or application, and the developer of a program decides what the program does with it.
+
 
 
 # Versions
